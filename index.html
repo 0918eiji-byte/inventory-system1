@@ -243,6 +243,24 @@ select option{background:var(--bg2)}
 
 /* CODE BLOCK (GS template) */
 .code-block{background:#050910;border:1px solid #1c2a45;border-radius:var(--r);padding:12px 14px;font-family:monospace;font-size:11px;color:#9ab;overflow-x:auto;white-space:pre;line-height:1.6;margin-top:8px;max-height:280px;overflow-y:auto}
+
+/* 数値入力を大きく */
+input[type=number]{font-size:16px;padding:10px 12px}
+.sinp{font-size:16px;padding:8px 10px;width:90px}
+.bm-new-qty-wrap input{font-size:18px;padding:12px 14px}
+.ci-qty{width:64px;font-size:15px;padding:6px 8px}
+/* 錬金カード */
+.alch-card{background:var(--bg3);border:1px solid #1c2a45;border-radius:var(--r2);padding:14px;cursor:pointer;transition:all .12s;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.alch-card:hover{border-color:rgba(127,100,221,.5);background:rgba(127,100,221,.06)}
+.alch-card.sel{border:1.5px solid rgba(127,100,221,.8);background:rgba(127,100,221,.1)}
+.alch-tag{background:rgba(127,100,221,.2);color:#a580dd;padding:1px 6px;border-radius:3px;font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:.5px}
+/* Discord embed preview */
+.dc-embed{background:#2f3136;border-left:4px solid var(--or);border-radius:0 4px 4px 0;padding:12px 14px;font-size:12px;color:#dcddde;line-height:1.7}
+.dc-title{color:#fff;font-weight:700;font-size:13px;margin-bottom:6px}
+.dc-field{display:inline-block;min-width:120px;margin:4px 12px 4px 0;vertical-align:top}
+.dc-fn{color:#8e9297;font-size:10px;font-weight:600;text-transform:uppercase;margin-bottom:1px}
+.dc-fv{color:#dcddde;font-size:12px}
+
 </style>
 </head>
 <body>
@@ -274,8 +292,9 @@ select option{background:var(--bg2)}
   <div class="sdiv"></div>
   <div class="sgrp">在庫</div>
   <div class="sitem" id="si-stock" onclick="goSc('stock',this)"><div class="sitem-icon">▣</div><div class="sitem-lbl">在庫管理</div></div>
-  <div class="sitem" id="si-buymat" onclick="goSc('buymat',this)"><div class="sitem-icon">◇</div><div class="sitem-lbl">素材買い取り</div></div>
   <div class="sitem" id="si-matmgmt" onclick="goSc('matmgmt',this)"><div class="sitem-icon">◆</div><div class="sitem-lbl">素材管理</div></div>
+  <div class="sitem" id="si-buymat" onclick="goSc('buymat',this)"><div class="sitem-icon">◇</div><div class="sitem-lbl">素材買い取り</div></div>
+  <div class="sitem" id="si-alch" onclick="goSc('alch',this)"><div class="sitem-icon">⚗</div><div class="sitem-lbl">錬金</div></div>
   <div class="sdiv"></div>
   <div class="sgrp">SYSTEM</div>
   <div class="sitem" id="si-admin" onclick="goSc('admin',this)"><div class="sitem-icon">⚙</div><div class="sitem-lbl">管理・ログ</div></div>
@@ -459,16 +478,45 @@ select option{background:var(--bg2)}
   </div>
 </div>
 
+<!-- 錬金 -->
+<div id="sc-alch" class="sc">
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="card-t">錬金レシピを選択</div>
+        <div id="alch-recipe-list"><div class="empty">錬金レシピがありません<br>管理→錬金レシピ で設定してください</div></div>
+      </div>
+      <div id="alch-detail-wrap" style="display:none">
+        <div class="card">
+          <div class="card-t" id="alch-detail-title">実行回数</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+            <div style="flex:1"><label class="lbl">実行回数</label><input id="alch-times" type="number" min="1" value="1" style="font-size:16px;padding:10px 12px" oninput="renderAlchPreview()"></div>
+            <div id="alch-max-info" style="font-size:12px;color:var(--tx2);padding-top:20px"></div>
+          </div>
+        </div>
+        <div class="fg"><label class="lbl">備考</label><textarea id="alch-note" rows="2" placeholder="メモ..."></textarea></div>
+        <button class="btn" id="alch-btn" style="width:100%;background:rgba(127,100,221,.2);border-color:rgba(127,100,221,.5);color:#a580dd;font-weight:700" onclick="submitAlch()">錬金を実行する</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">素材変換プレビュー</div>
+      <div id="alch-preview"><div class="empty">レシピを選択してください</div></div>
+    </div>
+  </div>
+</div>
+
 <!-- 管理・ログ -->
 <div id="sc-admin" class="sc">
   <div class="anav">
     <button class="anb on" onclick="goAdmTab('adm-ov',this)">概要</button>
     <button class="anb" onclick="goAdmTab('adm-prod',this)">商品</button>
     <button class="anb" onclick="goAdmTab('adm-mat',this)">素材</button>
-    <button class="anb" onclick="goAdmTab('adm-recipe',this)">レシピ</button>
+    <button class="anb" onclick="goAdmTab('adm-recipe',this)">クラフトレシピ</button>
+    <button class="anb" onclick="goAdmTab('adm-alchrecipe',this)">錬金レシピ</button>
     <button class="anb" onclick="goAdmTab('adm-perm',this)">権限設定</button>
     <button class="anb" onclick="goAdmTab('adm-mem',this)">担当者</button>
     <button class="anb" onclick="goAdmTab('adm-log',this)">ログ</button>
+    <button class="anb" onclick="goAdmTab('adm-discord',this)">Discord</button>
     <button class="anb" onclick="goAdmTab('adm-gs',this)">Google Sheets</button>
     <button class="anb" onclick="goAdmTab('adm-misc',this)">その他</button>
   </div>
@@ -532,6 +580,29 @@ select option{background:var(--bg2)}
       </div>
     </div>
   </div>
+  <div id="adm-alchrecipe" class="sc" style="display:none">
+    <div class="card">
+      <div class="card-t">錬金レシピを追加</div>
+      <div class="fg"><label class="lbl">レシピ名</label><input id="ar-name" placeholder="例：革→金属変換"></div>
+      <div style="font-size:11px;color:var(--tx2);margin-bottom:8px;letter-spacing:1px">消費素材（何を使うか）</div>
+      <div id="ar-in-list"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:12px">
+        <div style="flex:1"><label class="lbl">素材</label><select id="ar-in-mat"><option value="">-- 素材を選択 --</option></select></div>
+        <div style="width:80px"><label class="lbl">消費数</label><input id="ar-in-amt" type="number" min="1" step="1" placeholder="1"></div>
+        <button class="btn bp bs" onclick="arAddIn()">追加</button>
+      </div>
+      <div style="font-size:11px;color:var(--tx2);margin-bottom:8px;letter-spacing:1px">生成素材（何が出るか）</div>
+      <div id="ar-out-list"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:16px">
+        <div style="flex:1"><label class="lbl">素材</label><select id="ar-out-mat"><option value="">-- 素材を選択 --</option></select></div>
+        <div style="width:80px"><label class="lbl">生成数</label><input id="ar-out-amt" type="number" min="1" step="1" placeholder="1"></div>
+        <button class="btn bs" style="border-color:rgba(127,100,221,.5);color:#a580dd" onclick="arAddOut()">追加</button>
+      </div>
+      <button class="btn bp" style="width:100%" onclick="addAlchRecipe()">レシピを登録する</button>
+    </div>
+    <div class="card"><div class="card-t">錬金レシピ一覧</div><div id="adm-alch-list"></div></div>
+  </div>
+
   <div id="adm-perm" class="sc" style="display:none">
     <div class="card">
       <div class="card-hdr"><div class="card-t" style="margin:0">権限ごとのアクセス設定</div><button class="btn bp bs" onclick="savePermConfig()">保存</button></div>
@@ -568,6 +639,44 @@ select option{background:var(--bg2)}
     <div class="card" style="border-radius:0 0 var(--r2) var(--r2);margin-top:0"><div id="log-list"></div></div>
   </div>
   <!-- Google Sheets 設定 -->
+  <div id="adm-discord" class="sc" style="display:none">
+    <div class="card">
+      <div class="card-t">Discord Webhook 設定</div>
+      <div class="fg">
+        <label class="lbl">Webhook URL</label>
+        <div style="display:flex;gap:8px">
+          <input id="dc-url" placeholder="https://discord.com/api/webhooks/...">
+          <button class="btn bp bs" onclick="saveDcUrl()" style="white-space:nowrap">保存</button>
+          <button class="btn bs" onclick="testDcWebhook()" style="white-space:nowrap">テスト送信</button>
+        </div>
+        <div id="dc-test-result" style="font-size:11px;margin-top:6px;color:var(--tx2)"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <input type="checkbox" id="dc-enabled" style="width:auto;margin:0;accent-color:var(--or)" onchange="saveDcSettings()">
+        <label style="font-size:12px;color:var(--tx2);cursor:pointer" for="dc-enabled">操作ログをDiscordに自動送信する</label>
+      </div>
+      <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">送信される操作: 販売・クラフト・素材買い取り・錬金・団体販売受け渡し</div>
+    </div>
+    <div class="card">
+      <div class="card-t">送信フォーマットプレビュー</div>
+      <div style="background:#36393f;border-radius:8px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--or);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#000;font-family:'Rajdhani',sans-serif">在</div>
+          <div><div style="color:#fff;font-weight:600;font-size:13px">在庫Bot</div><div style="color:#72767d;font-size:11px">今日 XX:XX</div></div>
+        </div>
+        <div class="dc-embed">
+          <div class="dc-title">📦 販売報告</div>
+          <div>
+            <div class="dc-field"><div class="dc-fn">担当者</div><div class="dc-fv">田中 一郎</div></div>
+            <div class="dc-field"><div class="dc-fn">操作種別</div><div class="dc-fv">SALE</div></div>
+            <div class="dc-field"><div class="dc-fn">日時</div><div class="dc-fv">04/24 15:30</div></div>
+          </div>
+          <div style="margin-top:8px"><div class="dc-fn">内容</div><div class="dc-fv">レザーウォレット×2, キーホルダー×3 ¥25,600</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="adm-gs" class="sc" style="display:none">
     <div class="card">
       <div class="card-t">Google Sheets 連携設定</div>
@@ -644,7 +753,7 @@ const LS_KEY = 'valcol_inv';
 const SESS_KEY = 'valcol_sess';
 const GS_KEY = 'valcol_gs_url';
 
-let S = {products:[],materials:[],members:[],logs:[],orgs:[],reservations:[],permConfig:null,settings:{}};
+let S = {products:[],materials:[],members:[],logs:[],orgs:[],reservations:[],alchRecipes:[],permConfig:null,settings:{}};
 let op = null, pinBuf = '';
 let saleCart = [], saleCat = 'all';
 let grpCart = [], grpCat = 'all';
@@ -652,16 +761,18 @@ let selCraftId = null;
 let stkEdits = {}, stkCat = null;
 let matEdits = {}, matCat = null;
 let gsUrl = '';
+let dcUrl = '';
+let dcEnabled = false;
 
 const DEFAULT_PERM = {
-  admin:['sale','craft','grp','stock','buymat','matmgmt','admin'],
-  chief:['sale','craft','grp','buymat'],
+  admin:['sale','craft','grp','stock','matmgmt','buymat','alch','admin'],
+  chief:['sale','craft','grp','matmgmt','buymat','alch'],
   staff:['sale','craft','grp']
 };
 const FEATURES = [
   {id:'sale',label:'販売報告'},{id:'craft',label:'クラフト制作'},
   {id:'grp',label:'団体販売'},{id:'stock',label:'在庫管理(商品)'},
-  {id:'buymat',label:'素材買い取り'},{id:'matmgmt',label:'素材管理'},{id:'admin',label:'管理・ログ'},
+  {id:'matmgmt',label:'素材管理'},{id:'buymat',label:'素材買い取り'},{id:'alch',label:'錬金'},{id:'admin',label:'管理・ログ'},
 ];
 const PL={admin:'管理者',chief:'チーフ',staff:'スタッフ'};
 const PBADGE={admin:'b-adm',chief:'b-chief',staff:'b-staff'};
@@ -688,7 +799,7 @@ async function gsPush(){
     await fetch(gsUrl,{method:'POST',body:JSON.stringify(S),headers:{'Content-Type':'text/plain'}});
     setSyncStatus('ok','SYNCED ✓');
     setTimeout(()=>setSyncStatus('','SHEETS'),3000);
-  }catch(e){setSyncStatus('err','SYNC ERR');}
+  }catch(e){setSyncStatus('','LOCAL');}
 }
 async function gsPull(){
   if(!gsUrl)return;
@@ -733,10 +844,15 @@ async function init(){
   if(!S.permConfig)S.permConfig=JSON.parse(JSON.stringify(DEFAULT_PERM));
   if(!S.orgs)S.orgs=[];
   if(!S.reservations)S.reservations=[];
+  if(!S.alchRecipes)S.alchRecipes=[];
+  dcUrl = localStorage.getItem('dc_url')||'';
+  dcEnabled = localStorage.getItem('dc_enabled')==='1';
 
   if(gsUrl){
     setSyncStatus('','SHEETS');
     await gsPull();
+  } else {
+    setSyncStatus('','LOCAL');
   }
 
   // Try session restore
@@ -833,7 +949,7 @@ function doLogout(){
 //  SIDEBAR & NAVIGATION
 // ═══════════════════════════════
 function renderSidebar(){
-  ['sale','craft','grp','stock','buymat','matmgmt','admin'].forEach(id=>{
+  ['sale','craft','grp','stock','matmgmt','buymat','alch','admin'].forEach(id=>{
     const el=document.getElementById('si-'+id);
     if(!el)return;
     if(canDo(id))el.classList.remove('disabled');
@@ -851,8 +967,9 @@ function goSc(id,el){
   if(id==='craft')openCraft();
   if(id==='grp')renderGrpHist();
   if(id==='stock')openStock();
-  if(id==='buymat')openBuymatScreen();
   if(id==='matmgmt')openMatMgmt();
+  if(id==='buymat')openBuymatScreen();
+  if(id==='alch')openAlchScreen();
   if(id==='admin')renderAdmOv();
 }
 
@@ -886,7 +1003,7 @@ function renderSaleCart(){
   renderSaleSummary();
 }
 function renderSaleSummary(){const el=document.getElementById('sale-summary');if(!saleCart.length){el.innerHTML='<div class="empty">カートに追加すると表示されます</div>';return;}const sub=saleCart.reduce((s,c)=>s+c.price*c.qty,0),tq=saleCart.reduce((s,c)=>s+c.qty,0);el.innerHTML=`<div style="margin-bottom:10px"><div class="lbl" style="display:block;margin-bottom:3px">担当者</div><div style="font-size:14px;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--or)">${op?.name}</div></div>${saleCart.map(c=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:var(--tx2)"><span>${c.name} ×${c.qty}</span><span>¥${(c.price*c.qty).toLocaleString()}</span></div>`).join('')}<div class="calc-total" style="margin-top:10px;padding-top:10px"><span>合計 (${tq}点)</span><span>¥${sub.toLocaleString()}</span></div>`;}
-async function submitSale(){if(!saleCart.length){toast('カートが空です',false);return;}saleCart.forEach(c=>{const p=S.products.find(x=>x.id===c.id);if(p)p.qty=Math.max(0,p.qty-c.qty);});const sub=saleCart.reduce((s,c)=>s+c.price*c.qty,0);const items=saleCart.map(c=>`${c.name}×${c.qty}`).join(', ');const note=document.getElementById('sale-note').value;addLog('SALE',`販売: ${items} ¥${sub.toLocaleString()}${note?' ('+note+')':''}`,op?.name);saleCart=[];document.getElementById('sale-note').value='';toast('販売を記録しました');renderSale();}
+async function submitSale(){if(!saleCart.length){toast('カートが空です',false);return;}saleCart.forEach(c=>{const p=S.products.find(x=>x.id===c.id);if(p)p.qty=Math.max(0,p.qty-c.qty);});const sub=saleCart.reduce((s,c)=>s+c.price*c.qty,0);const items=saleCart.map(c=>`${c.name}×${c.qty}`).join(', ');const note=document.getElementById('sale-note').value;const saleLogTxt=`販売: ${items} ¥${sub.toLocaleString()}${note?' ('+note+')':''}`;addLog('SALE',saleLogTxt,op?.name);dcSend('SALE',saleLogTxt,op?.name);saleCart=[];document.getElementById('sale-note').value='';toast('販売を記録しました');renderSale();}
 
 // ═══════════════════════════════
 //  CRAFT
@@ -956,7 +1073,7 @@ async function submitCraft(){
   prod.qty+=qty;
   const note=document.getElementById('craft-note').value;
   const ml=(prod.recipe||[]).map(r=>{const m=S.materials.find(x=>x.id===r.matId);return m?`${m.name}-${r.amount*qty}${m.unit||'個'}`:null;}).filter(Boolean).join(', ');
-  addLog('CRAFT',`クラフト: ${prod.name} +${qty}個 / 消費[${ml}]${note?' ('+note+')':''}`,op?.name);
+  const craftLogTxt=`クラフト: ${prod.name} +${qty}個 / 消費[${ml}]${note?' ('+note+')':''}`;addLog('CRAFT',craftLogTxt,op?.name);dcSend('CRAFT',craftLogTxt,op?.name);
   selCraftId=null;document.getElementById('craft-note').value='';
   toast(`「${prod.name}」を${qty}個制作しました`);
   openCraft();
@@ -1057,7 +1174,7 @@ function completeReservation(id){
   res.status='completed';
   res.completedAt=new Date().toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   res.completedBy=op?.name;
-  addLog('GRP',`受け渡し完了: ${res.orgName} / ${res.memberName}`,op?.name);
+  const grpLogTxt=`受け渡し完了: ${res.orgName} / ${res.memberName}`;addLog('GRP',grpLogTxt,op?.name);dcSend('GRP',grpLogTxt,op?.name);
   renderGrpHist();toast('受け渡しを完了しました');
 }
 function renderGrpOrgs(){document.getElementById('grp-org-list').innerHTML=S.orgs.length?S.orgs.map((o,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:var(--bd2);font-size:12px"><div style="flex:1"><div style="font-weight:500">${o.name}</div><div style="font-size:10px;color:var(--tx3)">${o.memo||''}</div></div><button class="btn bs bd-btn" onclick="delOrg(${i})">削除</button></div>`).join(''):'<div class="empty">登録された団体がありません</div>';}
@@ -1209,7 +1326,7 @@ function renderAdmOv(){
   document.getElementById('ov-mat').innerHTML=S.materials.length?S.materials.map(m=>{const s=sts(m);return`<tr><td style="font-weight:500">${m.name}</td><td>${m.qty}</td><td style="color:var(--tx2)">${m.unit||'個'}</td><td><span class="badge ${s.c}">${s.l}</span></td></tr>`}).join(''):`<tr><td colspan="4"><div class="empty">なし</div></td></tr>`;
 }
 function goAdmTab(id,el){
-  ['adm-ov','adm-prod','adm-mat','adm-recipe','adm-perm','adm-mem','adm-log','adm-gs','adm-misc'].forEach(t=>{
+  ['adm-ov','adm-prod','adm-mat','adm-recipe','adm-alchrecipe','adm-perm','adm-mem','adm-log','adm-discord','adm-gs','adm-misc'].forEach(t=>{
     const x=document.getElementById(t);if(x){x.style.display='none';x.classList.remove('on');}
   });
   document.getElementById(id).style.display='block';
@@ -1219,6 +1336,8 @@ function goAdmTab(id,el){
   if(id==='adm-prod')renderAdmProds();
   if(id==='adm-mat')renderAdmMats();
   if(id==='adm-recipe')renderRecipeTab();
+  if(id==='adm-alchrecipe')renderAlchRecipeTab();
+  if(id==='adm-discord')renderDiscordTab();
   if(id==='adm-perm')renderPermTable();
   if(id==='adm-mem')renderAdmMembers();
   if(id==='adm-log')renderLogs();
@@ -1233,7 +1352,7 @@ function renderAdmProds(){document.getElementById('adm-prod-tb').innerHTML=S.pro
   <td><input type="number" value="${p.threshold||3}" style="width:50px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" min="0" onchange="S.products[${i}].threshold=+this.value;save()"></td>
   <td><span class="badge ${s.c}">${s.l}</span></td>
   <td><button class="btn bs bd-btn" onclick="delProd(${i})">削除</button></td>
-</tr>`}).join(''):`<tr><td colspan="7"><div class="empty">なし</div></td></tr>`;}
+</tr>`}).join(''):`<tr><td colspan='8'><div class='empty'>なし</div></td></tr>`;}
 function chgPQ(i,v){addLog('ADMIN',`商品「${S.products[i].name}」在庫変更 ${S.products[i].qty}→${+v}`,op?.name);S.products[i].qty=Math.max(0,+v);save();}
 function addProd(){const n=document.getElementById('ap-n').value.trim();if(!n){toast('商品名が必要です',false);return;}S.products.push({id:Date.now(),name:n,category:document.getElementById('ap-c').value.trim(),qty:parseInt(document.getElementById('ap-q').value)||0,price:parseInt(document.getElementById('ap-p').value)||0,threshold:parseInt(document.getElementById('ap-t').value)||3,recipe:[]});addLog('ADMIN',`商品「${n}」追加`,op?.name);['ap-n','ap-c','ap-q','ap-p','ap-t'].forEach(id=>document.getElementById(id).value='');renderAdmProds();toast(`「${n}」を追加しました`);}
 function delProd(i){const n=S.products[i].name;S.products.splice(i,1);addLog('ADMIN',`商品「${n}」削除`,op?.name);save();renderAdmProds();}
@@ -1246,7 +1365,7 @@ function renderAdmMats(){document.getElementById('adm-mat-tb').innerHTML=S.mater
   <td><input type="number" value="${m.threshold||5}" style="width:50px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" min="0" onchange="S.materials[${i}].threshold=+this.value;save()"></td>
   <td><span class="badge ${s.c}">${s.l}</span></td>
   <td><button class="btn bs bd-btn" onclick="delMat(${i})">削除</button></td>
-</tr>`}).join(''):`<tr><td colspan="7"><div class="empty">なし</div></td></tr>`;}
+</tr>`}).join(''):`<tr><td colspan='8'><div class='empty'>なし</div></td></tr>`;}
 function chgMQ(i,v){addLog('ADMIN',`素材「${S.materials[i].name}」在庫変更 ${S.materials[i].qty}→${+v}`,op?.name);S.materials[i].qty=Math.max(0,+v);save();}
 function addMat(){const n=document.getElementById('am-n').value.trim();if(!n){toast('素材名が必要です',false);return;}S.materials.push({id:Date.now(),name:n,category:document.getElementById('am-c').value.trim(),qty:parseInt(document.getElementById('am-q').value)||0,unit:document.getElementById('am-u').value.trim()||'個',threshold:parseInt(document.getElementById('am-t').value)||5,buyPrice:parseInt(document.getElementById('am-bp').value)||0});addLog('ADMIN',`素材「${n}」追加`,op?.name);['am-n','am-c','am-q','am-u','am-t','am-bp'].forEach(id=>document.getElementById(id).value='');renderAdmMats();toast(`「${n}」を追加しました`);}
 function delMat(i){const n=S.materials[i].name;S.materials.splice(i,1);addLog('ADMIN',`素材「${n}」削除`,op?.name);save();renderAdmMats();}
@@ -1305,7 +1424,7 @@ async function submitBuyMatNew(){
   if(!mat||qty<=0){toast('素材と数量を入力してください',false);return;}
   const price=mat.buyPrice||0;
   mat.qty+=qty;
-  addLog('BUY','素材買い取り: ' + mat.name + ' +' + qty + (mat.unit||'個') + ' @¥' + price.toLocaleString() + ' 合計¥' + (qty*price).toLocaleString() + (note?' ('+note+')':''),op?.name);
+  const buyLogTxt='素材買い取り: '+mat.name + ' +' + qty + (mat.unit||'個') + ' @¥' + price.toLocaleString() + ' 合計¥' + (qty*price).toLocaleString() + (note?' ('+note+')':'');addLog('BUY',buyLogTxt,op?.name);dcSend('BUY',buyLogTxt,op?.name);
   toast('「' + mat.name + '」' + qty + (mat.unit||'個') + 'を買い取りました');
   selBmMatId=null;
   document.getElementById('bm-new-qty').value=1;
@@ -1436,8 +1555,242 @@ async function gsPushNow(){if(!gsUrl){toast('URLが設定されていません',
 async function gsPullNow(){if(!gsUrl){toast('URLが設定されていません',false);return;}const ok=await gsPull();if(ok){renderSidebar();toast('Google Sheetsから読み込みました');}}
 function copyGsCode(){try{navigator.clipboard.writeText(GS_SCRIPT_CODE);toast('コードをコピーしました');}catch(e){toast('コピーに失敗しました',false);}}
 
+
+// ═══════════════════════════════
+//  DISCORD
+// ═══════════════════════════════
+const DC_ICONS = {SALE:'📦',CRAFT:'🔨',BUY:'📥',ALCH:'⚗️',GRP:'🤝',STK:'📋',ADMIN:'⚙️'};
+const DC_LABELS = {SALE:'販売報告',CRAFT:'クラフト制作報告',BUY:'素材買い取り',ALCH:'錬金実行',GRP:'団体販売',STK:'在庫修正',ADMIN:'管理操作'};
+
+async function dcSend(type, text, opName){
+  if(!dcEnabled || !dcUrl) return;
+  const now = new Date();
+  const timeStr = now.toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'}) + ' ' + now.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  const icon = DC_ICONS[type] || '📌';
+  const label = DC_LABELS[type] || type;
+  const colorMap = {SALE:0x1D9E75,CRAFT:0x185FA5,BUY:0xE07C10,ALCH:0x7F64DD,GRP:0xD44A7E,STK:0x607090,ADMIN:0x9070DD};
+  const payload = {
+    username: '在庫Bot',
+    embeds:[{
+      title: icon + ' ' + label,
+      color: colorMap[type]||0xE07C10,
+      fields:[
+        {name:'担当者',value:opName||'—',inline:true},
+        {name:'操作種別',value:type,inline:true},
+        {name:'日時',value:timeStr,inline:true},
+        {name:'内容',value:text,inline:false}
+      ],
+      footer:{text:'在庫管理システム'},
+      timestamp: now.toISOString()
+    }]
+  };
+  try{
+    // no-corsモード: file://プロトコルでもCORSエラーを回避
+    // Discordは204を返すためresponseは使わない
+    await fetch(dcUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload),
+      mode:'no-cors'
+    });
+  }catch(e){
+    // no-corsでも失敗する場合はサイレントに（ログには残る）
+    console.warn('Discord送信失敗（無視可）:',e.message);
+  }
+}
+
+function saveDcUrl(){
+  const url = document.getElementById('dc-url').value.trim();
+  dcUrl = url;
+  localStorage.setItem('dc_url', url);
+  toast(url ? 'Webhook URLを保存しました' : '連携を無効にしました');
+}
+function saveDcSettings(){
+  dcEnabled = document.getElementById('dc-enabled').checked;
+  localStorage.setItem('dc_enabled', dcEnabled?'1':'0');
+}
+async function testDcWebhook(){
+  const url = document.getElementById('dc-url').value.trim();
+  if(!url){toast('URLを入力してください',false);return;}
+  const res = document.getElementById('dc-test-result');
+  res.textContent = '送信中...';
+  try{
+    // no-corsではレスポンスが読めないため、fetchが通ればOKとみなす
+    await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:'在庫Bot',content:'✅ 接続テスト成功！在庫管理システムと連携できています。'}),
+      mode:'no-cors'
+    });
+    res.innerHTML = '<span style="color:var(--ok)">✓ 送信完了（Discordを確認してください）</span>';
+  }catch(e){res.innerHTML='<span style="color:var(--ng)">✗ エラー: '+e.message+'</span>';}
+}
+function renderDiscordTab(){
+  document.getElementById('dc-url').value = dcUrl||'';
+  document.getElementById('dc-enabled').checked = dcEnabled;
+}
+
+// ═══════════════════════════════
+//  ALCH (錬金)
+// ═══════════════════════════════
+let selAlchId = null;
+let arTmpIn = [], arTmpOut = [];
+
+function openAlchScreen(){
+  selAlchId=null;
+  document.getElementById('alch-detail-wrap').style.display='none';
+  document.getElementById('alch-preview').innerHTML='<div class="empty">レシピを選択してください</div>';
+  renderAlchList();
+}
+function renderAlchList(){
+  const el=document.getElementById('alch-recipe-list');
+  if(!S.alchRecipes||!S.alchRecipes.length){
+    el.innerHTML='<div class="empty">錬金レシピがありません<br>管理→錬金レシピ で設定してください</div>';return;
+  }
+  el.innerHTML=S.alchRecipes.map(r=>{
+    const inTxt=r.inputs.map(i=>{const m=S.materials.find(x=>x.id===i.matId);return m?m.name+'×'+i.amount:'?';}).join('、');
+    const outTxt=r.outputs.map(o=>{const m=S.materials.find(x=>x.id===o.matId);return m?m.name+'×'+o.amount:'?';}).join('、');
+    const sel=selAlchId===r.id;
+    return '<div class="alch-card '+(sel?'sel':'')+'" onclick="selectAlch('+r.id+')">'
+      +'<div style="flex:1">'
+      +'<div style="font-size:13px;font-weight:600">'+r.name+'</div>'
+      +'<div style="font-size:11px;color:var(--tx2);margin-top:4px"><span class="alch-tag">消費</span> '+inTxt+'</div>'
+      +'<div style="font-size:11px;color:var(--tx2);margin-top:3px"><span style="background:rgba(29,158,117,.2);color:var(--ok);padding:1px 6px;border-radius:3px;font-size:9px;font-family:Rajdhani,sans-serif;font-weight:600">生成</span> '+outTxt+'</div>'
+      +'</div><div style="color:'+(sel?'rgba(127,100,221,.9)':'var(--tx3)')+'">✓</div></div>';
+  }).join('');
+}
+function selectAlch(id){
+  selAlchId=id;renderAlchList();
+  const rec=S.alchRecipes.find(r=>r.id===id);if(!rec)return;
+  document.getElementById('alch-detail-wrap').style.display='block';
+  document.getElementById('alch-detail-title').textContent='「'+rec.name+'」の実行回数';
+  document.getElementById('alch-times').value=1;
+  renderAlchPreview();
+}
+function renderAlchPreview(){
+  const rec=S.alchRecipes.find(r=>r.id===selAlchId);if(!rec)return;
+  const times=parseInt(document.getElementById('alch-times').value)||1;
+  const el=document.getElementById('alch-preview');
+  const btn=document.getElementById('alch-btn');
+  // max実行可能回数
+  let maxTimes=999999;
+  rec.inputs.forEach(i=>{const m=S.materials.find(x=>x.id===i.matId);if(m&&i.amount>0)maxTimes=Math.min(maxTimes,Math.floor(m.qty/i.amount));});
+  if(maxTimes===999999)maxTimes=0;
+  document.getElementById('alch-max-info').textContent='(最大 '+maxTimes+' 回)';
+  const canExec=times>0&&times<=maxTimes;
+  btn.disabled=!canExec;
+  btn.style.opacity=canExec?'1':'0.45';
+  // 消費素材行
+  const inRows=rec.inputs.map(i=>{
+    const m=S.materials.find(x=>x.id===i.matId);if(!m)return'';
+    const need=i.amount*times;const ok=m.qty>=need;
+    const pct=Math.min(100,Math.round(m.qty/Math.max(need,.001)*100));
+    return '<div class="mrow"><div><span style="font-weight:500">'+m.name+'</span><span style="color:var(--tx3);font-size:10px;margin-left:5px">在庫:'+m.qty+(m.unit||'個')+'</span></div>'
+      +'<div style="display:flex;align-items:center;gap:4px"><span style="color:'+(ok?'var(--ok)':'var(--ng)')+';font-weight:'+(ok?400:600)+'">'+need+(m.unit||'個')+'消費</span>'
+      +'<div class="mbarw"><div class="mbar" style="width:'+pct+'%;background:'+(ok?'var(--ok)':'var(--ng)')+'"></div></div>'
+      +'<span style="font-size:10px;color:'+(ok?'var(--ok)':'var(--ng)')+'">'+( ok?'OK':'不足')+'</span></div></div>';
+  }).join('');
+  // 生成素材行
+  const outRows=rec.outputs.map(o=>{
+    const m=S.materials.find(x=>x.id===o.matId);if(!m)return'';
+    const gain=o.amount*times;
+    return '<div class="rrow"><span style="color:var(--tx2)">「'+m.name+'」</span><span style="color:var(--ok);font-weight:600">+'+gain+(m.unit||'個') +' → '+(m.qty+gain)+(m.unit||'個')+'</span></div>';
+  }).join('');
+  el.innerHTML='<div style="margin-bottom:10px">'
+    +'<div style="font-size:11px;color:rgba(127,100,221,.8);margin-bottom:6px;font-family:Rajdhani,sans-serif;letter-spacing:1px">消費素材 (×'+times+'回)</div>'
+    +inRows+'</div>'
+    +'<div class="rbox" style="background:rgba(127,100,221,.08);border-color:rgba(127,100,221,.3)">'
+    +'<div style="font-size:11px;font-weight:600;color:rgba(127,100,221,.9);margin-bottom:5px;font-family:Rajdhani,sans-serif">生成される素材</div>'
+    +outRows+'</div>'
+    +'<div style="margin-top:8px;font-size:11px;color:var(--tx3)">担当者: '+(op?.name||'—')+'</div>';
+}
+async function submitAlch(){
+  const rec=S.alchRecipes.find(r=>r.id===selAlchId);
+  const times=parseInt(document.getElementById('alch-times').value)||0;
+  if(!rec||times<=0){toast('レシピと回数を選んでください',false);return;}
+  let ok=true;
+  rec.inputs.forEach(i=>{const m=S.materials.find(x=>x.id===i.matId);if(!m||m.qty<i.amount*times)ok=false;});
+  if(!ok){toast('素材が不足しています',false);return;}
+  // 消費
+  rec.inputs.forEach(i=>{const m=S.materials.find(x=>x.id===i.matId);if(m)m.qty=Math.max(0,m.qty-i.amount*times);});
+  // 生成
+  rec.outputs.forEach(o=>{const m=S.materials.find(x=>x.id===o.matId);if(m)m.qty+=o.amount*times;});
+  const inTxt=rec.inputs.map(i=>{const m=S.materials.find(x=>x.id===i.matId);return m?m.name+'-'+(i.amount*times)+(m.unit||'個'):'';}).filter(Boolean).join(', ');
+  const outTxt=rec.outputs.map(o=>{const m=S.materials.find(x=>x.id===o.matId);return m?m.name+'+'+(o.amount*times)+(m.unit||'個'):'';}).filter(Boolean).join(', ');
+  const logTxt='錬金「'+rec.name+'」×'+times+'回 消費['+inTxt+'] 生成['+outTxt+']';
+  addLog('ALCH',logTxt,op?.name);
+  dcSend('ALCH',logTxt,op?.name);
+  toast('錬金を実行しました');
+  selAlchId=null;document.getElementById('alch-times').value=1;
+  document.getElementById('alch-detail-wrap').style.display='none';
+  document.getElementById('alch-note').value='';
+  openAlchScreen();
+}
+
+// 錬金レシピ管理
+function renderAlchRecipeTab(){
+  // セレクト更新
+  ['ar-in-mat','ar-out-mat'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.innerHTML='<option value="">-- 素材を選択 --</option>'+S.materials.map(m=>'<option value="'+m.id+'">'+m.name+' ('+(m.unit||'個')+')</option>').join('');
+  });
+  arTmpIn=[];arTmpOut=[];
+  renderArTmpLists();
+  renderAlchAdmList();
+}
+function renderArTmpLists(){
+  document.getElementById('ar-in-list').innerHTML=arTmpIn.length
+    ?arTmpIn.map((x,i)=>{const m=S.materials.find(mm=>mm.id===x.matId);return'<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:var(--bd2);font-size:12px"><span style="flex:1">'+(m?m.name:'?')+'</span><span style="color:rgba(127,100,221,.8)">×'+x.amount+'</span><button class="btn bs bd-btn" onclick="arTmpIn.splice('+i+',1);renderArTmpLists()">×</button></div>';}).join('')
+    :'<div style="font-size:11px;color:var(--tx3);padding:4px 0">消費素材を追加してください</div>';
+  document.getElementById('ar-out-list').innerHTML=arTmpOut.length
+    ?arTmpOut.map((x,i)=>{const m=S.materials.find(mm=>mm.id===x.matId);return'<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:var(--bd2);font-size:12px"><span style="flex:1">'+(m?m.name:'?')+'</span><span style="color:var(--ok)">×'+x.amount+'</span><button class="btn bs bd-btn" onclick="arTmpOut.splice('+i+',1);renderArTmpLists()">×</button></div>';}).join('')
+    :'<div style="font-size:11px;color:var(--tx3);padding:4px 0">生成素材を追加してください</div>';
+}
+function arAddIn(){
+  const mid=parseInt(document.getElementById('ar-in-mat').value);const amt=parseFloat(document.getElementById('ar-in-amt').value)||1;
+  if(!mid){toast('素材を選んでください',false);return;}
+  if(arTmpIn.find(x=>x.matId===mid)){toast('既に追加済みです',false);return;}
+  arTmpIn.push({matId:mid,amount:amt});renderArTmpLists();document.getElementById('ar-in-amt').value='';
+}
+function arAddOut(){
+  const mid=parseInt(document.getElementById('ar-out-mat').value);const amt=parseFloat(document.getElementById('ar-out-amt').value)||1;
+  if(!mid){toast('素材を選んでください',false);return;}
+  if(arTmpOut.find(x=>x.matId===mid)){toast('既に追加済みです',false);return;}
+  arTmpOut.push({matId:mid,amount:amt});renderArTmpLists();document.getElementById('ar-out-amt').value='';
+}
+function addAlchRecipe(){
+  const name=document.getElementById('ar-name').value.trim();
+  if(!name){toast('レシピ名が必要です',false);return;}
+  if(!arTmpIn.length){toast('消費素材を追加してください',false);return;}
+  if(!arTmpOut.length){toast('生成素材を追加してください',false);return;}
+  if(!S.alchRecipes)S.alchRecipes=[];
+  S.alchRecipes.push({id:Date.now(),name,inputs:arTmpIn.slice(),outputs:arTmpOut.slice()});
+  addLog('ADMIN','錬金レシピ「'+name+'」を追加',op?.name);
+  save();arTmpIn=[];arTmpOut=[];document.getElementById('ar-name').value='';
+  renderArTmpLists();renderAlchAdmList();
+  toast('「'+name+'」を登録しました');
+}
+function renderAlchAdmList(){
+  const el=document.getElementById('adm-alch-list');
+  if(!S.alchRecipes||!S.alchRecipes.length){el.innerHTML='<div class="empty">レシピがありません</div>';return;}
+  el.innerHTML=S.alchRecipes.map((r,i)=>{
+    const inTxt=r.inputs.map(x=>{const m=S.materials.find(mm=>mm.id===x.matId);return(m?m.name:'?')+'×'+x.amount;}).join('、');
+    const outTxt=r.outputs.map(x=>{const m=S.materials.find(mm=>mm.id===x.matId);return(m?m.name:'?')+'×'+x.amount;}).join('、');
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:var(--bd2)">'
+      +'<div style="flex:1"><div style="font-size:13px;font-weight:600;margin-bottom:4px">'+r.name+'</div>'
+      +'<div style="font-size:11px;color:var(--tx2)"><span class="alch-tag">消費</span> '+inTxt+'</div>'
+      +'<div style="font-size:11px;color:var(--tx2);margin-top:3px"><span style="background:rgba(29,158,117,.2);color:var(--ok);padding:1px 6px;border-radius:3px;font-size:9px">生成</span> '+outTxt+'</div></div>'
+      +'<button class="btn bs bd-btn" onclick="delAlchRecipe('+i+')">削除</button></div>';
+  }).join('');
+}
+function delAlchRecipe(i){
+  const name=S.alchRecipes[i].name;
+  if(!confirm('「'+name+'」を削除しますか？'))return;
+  S.alchRecipes.splice(i,1);save();renderAlchAdmList();toast('削除しました');
+}
+
 /* その他 */
-function resetAll(){if(!confirm('全データをリセットしますか？\nこの操作は取り消せません。'))return;S={products:[],materials:[],members:[],logs:[],orgs:[],reservations:[],permConfig:JSON.parse(JSON.stringify(DEFAULT_PERM)),settings:{}};save();doLogout();toast('リセットしました');}
+function resetAll(){if(!confirm('全データをリセットしますか？\nこの操作は取り消せません。'))return;S={products:[],materials:[],members:[],logs:[],orgs:[],reservations:[],alchRecipes:[],permConfig:JSON.parse(JSON.stringify(DEFAULT_PERM)),settings:{}};save();doLogout();toast('リセットしました');}
 
 // ═══════════════════════════════
 //  START
