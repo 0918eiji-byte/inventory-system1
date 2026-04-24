@@ -643,14 +643,19 @@ input[type=number]{font-size:16px;padding:10px 12px}
     <div class="card">
       <div class="card-t">Discord Webhook 設定</div>
       <div class="fg">
-        <label class="lbl">Webhook URL</label>
-        <div style="display:flex;gap:8px">
-          <input id="dc-url" placeholder="https://discord.com/api/webhooks/...">
-          <button class="btn bp bs" onclick="saveDcUrl()" style="white-space:nowrap">保存</button>
-          <button class="btn bs" onclick="testDcWebhook()" style="white-space:nowrap">テスト送信</button>
-        </div>
-        <div id="dc-test-result" style="font-size:11px;margin-top:6px;color:var(--tx2)"></div>
+        <label class="lbl">Discord Webhook URL</label>
+        <input id="dc-url" placeholder="https://discord.com/api/webhooks/...">
       </div>
+      <div class="fg">
+        <label class="lbl">GAS 中継 URL <span style="color:var(--or);font-size:9px">★ file://で開く場合は必須</span></label>
+        <input id="dc-gas-relay" placeholder="https://script.google.com/macros/s/.../exec">
+        <div style="font-size:10px;color:var(--tx3);margin-top:4px">GASを中継することでfile://プロトコルのCORS制限を回避します</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn bp bs" onclick="saveDcUrl()" style="white-space:nowrap">保存</button>
+        <button class="btn bs" onclick="testDcWebhook()" style="white-space:nowrap">テスト送信</button>
+      </div>
+      <div id="dc-test-result" style="font-size:11px;margin-bottom:10px;color:var(--tx2)"></div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <input type="checkbox" id="dc-enabled" style="width:auto;margin:0;accent-color:var(--or)" onchange="saveDcSettings()">
         <label style="font-size:12px;color:var(--tx2);cursor:pointer" for="dc-enabled">操作ログをDiscordに自動送信する</label>
@@ -1479,11 +1484,61 @@ function clearLogs(){if(!confirm('ログをすべて消去しますか？'))retu
 // ═══════════════════════════════
 //  GOOGLE SHEETS TAB
 // ═══════════════════════════════
-const GS_SCRIPT_CODE = `// ===== Google Apps Script (コピーして使用) =====
-// 設定: デプロイ → 新しいデプロイ → ウェブアプリ
-//       実行ユーザー: 自分 / アクセス: 全員
+const GS_SCRIPT_CODE = `// ===== Google Apps Script - Discord中継 + Sheets保存 =====
+// 【使い方】このコードをApps Scriptに貼り付けてデプロイ
+// デプロイ設定: 実行ユーザー→自分 / アクセス→全員
 
 function doGet(e) {
+  // ① Sheets からデータ読み込み
+  if (!e.parameter.webhook) {
+    return loadFromSheet();
+  }
+  // ② Discord Webhook へ中継
+  return relayToDiscord(e);
+}
+
+function doPost(e) {
+  // Sheets へデータ保存
+  return saveToSheet(e);
+}
+
+// ─── Discord 中継 ───────────────────────────
+function relayToDiscord(e) {
+  const webhookUrl = e.parameter.webhook;
+  const payload    = e.parameter.payload;
+  if (!webhookUrl || !payload) {
+    return jsonRes({ok:false, error:'missing params'});
+  }
+  try {
+    const res = UrlFetchApp.fetch(webhookUrl, {
+      method      : 'post',
+      contentType : 'application/json',
+      payload     : payload,
+      muteHttpExceptions: true
+    });
+    return jsonRes({ok:true, status:res.getResponseCode()});
+  } catch(err) {
+    return jsonRes({ok:false, error:err.message});
+  }
+}
+
+// ─── Sheets 保存 ────────────────────────────
+function saveToSheet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName('db') || ss.insertSheet('db');
+  const body = e.postData.contents;
+  sh.getRange('A1').setValue(body);
+  try {
+    const data = JSON.parse(body);
+    writeReadable(ss, '商品',   data.products  ||[], ['id','name','category','qty','price','threshold']);
+    writeReadable(ss, '素材',   data.materials ||[], ['id','name','category','qty','unit','threshold','buyPrice']);
+    writeReadable(ss, 'ログ',   data.logs      ||[], ['t','type','text','by']);
+  } catch(err) {}
+  return jsonRes({ok:true});
+}
+
+// ─── Sheets 読み込み ─────────────────────────
+function loadFromSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sh = ss.getSheetByName('db') || ss.insertSheet('db');
   const val = sh.getRange('A1').getValue();
@@ -1492,39 +1547,23 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function doPost(e) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sh = ss.getSheetByName('db') || ss.insertSheet('db');
-  const body = e.postData.contents;
-  sh.getRange('A1').setValue(body);
-  
-  // 読みやすいシートにも書き出し
-  try {
-    const data = JSON.parse(body);
-    writeReadable(ss, '商品', data.products || [],
-      ['id','name','category','qty','price','threshold']);
-    writeReadable(ss, '素材', data.materials || [],
-      ['id','name','category','qty','unit','threshold']);
-    writeReadable(ss, 'ログ', data.logs || [],
-      ['t','type','text','by']);
-  } catch(err) {}
-  
-  return ContentService
-    .createTextOutput(JSON.stringify({ok: true}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
+// ─── ユーティリティ ──────────────────────────
 function writeReadable(ss, name, arr, cols) {
   let sh = ss.getSheetByName(name) || ss.insertSheet(name);
   sh.clearContents();
   if (!arr.length) return;
   sh.getRange(1,1,1,cols.length).setValues([cols]);
-  const rows = arr.map(d =>
-    cols.map(c => d[c] !== undefined
-      ? (typeof d[c] === 'object' ? JSON.stringify(d[c]) : d[c])
-      : '')
-  );
+  const rows = arr.map(d => cols.map(c => {
+    const v = d[c];
+    return v === undefined ? '' : (typeof v === 'object' ? JSON.stringify(v) : v);
+  }));
   sh.getRange(2,1,rows.length,cols.length).setValues(rows);
+}
+
+function jsonRes(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }`;
 
 function renderGsTab(){
@@ -1584,26 +1623,39 @@ async function dcSend(type, text, opName){
       timestamp: now.toISOString()
     }]
   };
-  try{
-    // no-corsモード: file://プロトコルでもCORSエラーを回避
-    // Discordは204を返すためresponseは使わない
-    await fetch(dcUrl,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload),
-      mode:'no-cors'
+  // GAS経由で送信（CORS回避）
+  // dcUrlがGAS URLの場合: ?webhook=<encoded>&payload=<encoded> でGETリクエスト
+  // dcUrlがDiscord Webhook直接の場合: GAS中継URLが別途設定されていればそちら経由
+  const gasRelay = localStorage.getItem('gas_relay_url') || '';
+  if(gasRelay){
+    // GAS中継経由（推奨）
+    const params = new URLSearchParams({
+      webhook: dcUrl,
+      payload: JSON.stringify(payload)
     });
-  }catch(e){
-    // no-corsでも失敗する場合はサイレントに（ログには残る）
-    console.warn('Discord送信失敗（無視可）:',e.message);
+    try{
+      await fetch(gasRelay + '?' + params.toString(), {method:'GET', mode:'no-cors'});
+    }catch(e){ console.warn('Discord GAS中継送信失敗:',e.message); }
+  } else {
+    // 直接送信（httpsホスト環境のみ動作）
+    try{
+      await fetch(dcUrl,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+    }catch(e){ console.warn('Discord直接送信失敗:',e.message); }
   }
 }
 
 function saveDcUrl(){
   const url = document.getElementById('dc-url').value.trim();
+  const relay = document.getElementById('dc-gas-relay').value.trim();
   dcUrl = url;
   localStorage.setItem('dc_url', url);
-  toast(url ? 'Webhook URLを保存しました' : '連携を無効にしました');
+  if(relay) localStorage.setItem('gas_relay_url', relay);
+  else localStorage.removeItem('gas_relay_url');
+  toast(url ? 'Discord設定を保存しました' : '連携を無効にしました');
 }
 function saveDcSettings(){
   dcEnabled = document.getElementById('dc-enabled').checked;
@@ -1611,23 +1663,32 @@ function saveDcSettings(){
 }
 async function testDcWebhook(){
   const url = document.getElementById('dc-url').value.trim();
-  if(!url){toast('URLを入力してください',false);return;}
+  const gasRelay = document.getElementById('dc-gas-relay').value.trim() || localStorage.getItem('gas_relay_url') || '';
+  if(!url){toast('Webhook URLを入力してください',false);return;}
   const res = document.getElementById('dc-test-result');
   res.textContent = '送信中...';
-  try{
-    // no-corsではレスポンスが読めないため、fetchが通ればOKとみなす
-    await fetch(url,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:'在庫Bot',content:'✅ 接続テスト成功！在庫管理システムと連携できています。'}),
-      mode:'no-cors'
-    });
-    res.innerHTML = '<span style="color:var(--ok)">✓ 送信完了（Discordを確認してください）</span>';
-  }catch(e){res.innerHTML='<span style="color:var(--ng)">✗ エラー: '+e.message+'</span>';}
+  const payload = {username:'在庫Bot',embeds:[{title:'✅ 接続テスト',color:0xE07C10,description:'在庫管理システムとの連携テストです',footer:{text:'在庫管理システム'}}]};
+  if(gasRelay){
+    // GAS中継経由
+    const params = new URLSearchParams({webhook:url, payload:JSON.stringify(payload)});
+    try{
+      await fetch(gasRelay+'?'+params.toString(),{method:'GET',mode:'no-cors'});
+      res.innerHTML='<span style="color:var(--ok)">✓ GAS中継で送信しました（Discordを確認）</span>';
+    }catch(e){res.innerHTML='<span style="color:var(--ng)">✗ GAS中継エラー: '+e.message+'</span>';}
+  } else {
+    // 直接送信（httpsホスト環境のみ）
+    try{
+      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      res.innerHTML = r.ok ? '<span style="color:var(--ok)">✓ 送信成功</span>' : '<span style="color:var(--ng)">✗ 送信失敗 (status '+r.status+')</span>';
+    }catch(e){
+      res.innerHTML='<span style="color:var(--ng)">✗ CORS/接続エラー。GAS中継URLを設定してください。</span>';
+    }
+  }
 }
 function renderDiscordTab(){
   document.getElementById('dc-url').value = dcUrl||'';
   document.getElementById('dc-enabled').checked = dcEnabled;
+  document.getElementById('dc-gas-relay').value = localStorage.getItem('gas_relay_url')||'';
 }
 
 // ═══════════════════════════════
