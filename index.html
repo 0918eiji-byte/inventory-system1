@@ -62,7 +62,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Noto Sans JP',sans-serif;
 
 /* CONTENT */
 #content{flex:1;overflow-y:auto;padding:16px 20px;scrollbar-width:thin;scrollbar-color:var(--orb) var(--bg2)}
-.sc{display:none}.sc.on{display:block}
+.sc{display:none}.sc.on{display:block}.stab{display:none}.stab.on{display:block}
 
 /* CARDS */
 .card{background:var(--bg2);border:var(--bd);border-radius:var(--r2);padding:16px 18px;margin-bottom:14px}
@@ -352,7 +352,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
     <button class="anb" onclick="goGrpTab('gt-new',this)">予約作成</button>
     <button class="anb" onclick="goGrpTab('gt-orgs',this)">団体登録</button>
   </div>
-  <div id="gt-hist" class="sc on">
+  <div id="gt-hist" class="stab on">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div style="font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--or);letter-spacing:1px">予約一覧</div>
       <select id="grp-hf" onchange="renderGrpHist()" style="width:auto;font-size:11px;padding:4px 8px">
@@ -361,7 +361,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
     </div>
     <div id="grp-hist-list"></div>
   </div>
-  <div id="gt-new" class="sc" style="display:none">
+  <div id="gt-new" class="stab" style="display:none">
     <div class="two-col">
       <div>
         <div class="card">
@@ -385,7 +385,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
       <div class="card"><div class="card-t">予約サマリー</div><div id="grp-summary"><div class="empty">入力すると表示されます</div></div></div>
     </div>
   </div>
-  <div id="gt-orgs" class="sc" style="display:none">
+  <div id="gt-orgs" class="stab" style="display:none">
     <div class="card">
       <div class="card-t">団体を追加</div>
       <div style="display:flex;gap:8px;align-items:flex-end;padding:10px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px">
@@ -520,7 +520,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
     <button class="anb" onclick="goAdmTab('adm-gs',this)">Google Sheets</button>
     <button class="anb" onclick="goAdmTab('adm-misc',this)">その他</button>
   </div>
-  <div id="adm-ov" class="sc on">
+  <div id="adm-ov" class="stab on">
     <div id="adm-alerts"></div>
     <div class="metrics" id="adm-metrics"></div>
     <div class="two-col">
@@ -528,7 +528,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
       <div class="card"><div class="card-t">素材在庫</div><div class="tbl-wrap"><table><thead><tr><th style="width:42%">素材名</th><th style="width:22%">在庫</th><th style="width:14%">単位</th><th style="width:22%">状態</th></tr></thead><tbody id="ov-mat"></tbody></table></div></div>
     </div>
   </div>
-  <div id="adm-prod" class="sc" style="display:none">
+  <div id="adm-prod" class="stab" style="display:none">
     <div class="card"><div class="card-t">商品を追加</div>
       <div class="row">
         <div style="flex:2;min-width:100px"><label class="lbl">商品名</label><input id="ap-n" placeholder="商品名"></div>
@@ -545,7 +545,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
       <th style="width:58px">閾値</th><th style="width:68px">状態</th><th style="width:52px">操作</th>
     </tr></thead><tbody id="adm-prod-tb"></tbody></table></div></div>
   </div>
-  <div id="adm-mat" class="sc" style="display:none">
+  <div id="adm-mat" class="stab" style="display:none">
     <div class="card"><div class="card-t">素材を追加</div>
       <div class="row">
         <div style="flex:2;min-width:100px"><label class="lbl">素材名</label><input id="am-n" placeholder="素材名"></div>
@@ -563,7 +563,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
       <th style="width:55px">閾値</th><th style="width:72px">買取単価</th><th style="width:68px">状態</th><th style="width:52px">操作</th>
     </tr></thead><tbody id="adm-mat-tb"></tbody></table></div></div>
   </div>
-  <div id="adm-recipe" class="sc" style="display:none">
+  <div id="adm-recipe" class="stab" style="display:none">
     <div class="card"><div class="card-t">レシピを設定する商品</div>
       <div class="fg"><label class="lbl">商品を選択</label><select id="recipe-prod-sel" onchange="renderRecipeEditor()" style="max-width:260px"><option value="">-- 商品を選択 --</option></select></div>
     </div>
@@ -580,7 +580,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
       </div>
     </div>
   </div>
-  <div id="adm-alchrecipe" class="sc" style="display:none">
+  <div id="adm-alchrecipe" class="stab" style="display:none">
     <div class="card">
       <div class="card-t">錬金レシピを追加</div>
       <div class="fg"><label class="lbl">レシピ名</label><input id="ar-name" placeholder="例：革→金属変換"></div>
@@ -603,7 +603,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
     <div class="card"><div class="card-t">錬金レシピ一覧</div><div id="adm-alch-list"></div></div>
   </div>
 
-  <div id="adm-perm" class="sc" style="display:none">
+  <div id="adm-perm" class="stab" style="display:none">
     <div class="card">
       <div class="card-hdr"><div class="card-t" style="margin:0">権限ごとのアクセス設定</div><button class="btn bp bs" onclick="savePermConfig()">保存</button></div>
       <div style="font-size:12px;color:var(--tx2);margin-bottom:12px">各権限が利用できる機能を設定してください。管理者の「管理・ログ」は変更不可です。</div>
@@ -613,7 +613,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
       <div style="font-size:12px;color:#5898dd">ℹ 設定変更は次回ログイン時から反映されます。現在のセッションには影響しません。</div>
     </div>
   </div>
-  <div id="adm-mem" class="sc" style="display:none">
+  <div id="adm-mem" class="stab" style="display:none">
     <div class="card"><div class="card-t">担当者を追加</div>
       <div class="row">
         <div style="flex:2;min-width:88px"><label class="lbl">名前</label><input id="mm-n" placeholder="田中 一郎"></div>
@@ -625,7 +625,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
     </div>
     <div class="card"><div class="card-t">担当者一覧</div><div id="adm-mem-list"></div></div>
   </div>
-  <div id="adm-log" class="sc" style="display:none">
+  <div id="adm-log" class="stab" style="display:none">
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;margin-bottom:0;border-bottom:none;border-radius:var(--r2) var(--r2) 0 0">
       <div class="card-t" style="margin:0">操作ログ</div>
       <div style="display:flex;gap:8px">
@@ -639,7 +639,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
     <div class="card" style="border-radius:0 0 var(--r2) var(--r2);margin-top:0"><div id="log-list"></div></div>
   </div>
   <!-- Google Sheets 設定 -->
-  <div id="adm-discord" class="sc" style="display:none">
+  <div id="adm-discord" class="stab" style="display:none">
     <div class="card">
       <div class="card-t">Discord Webhook 設定</div>
       <div class="fg">
@@ -682,7 +682,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
     </div>
   </div>
 
-  <div id="adm-gs" class="sc" style="display:none">
+  <div id="adm-gs" class="stab" style="display:none">
     <div class="card">
       <div class="card-t">Google Sheets 連携設定</div>
       <div style="font-size:12px;color:var(--tx2);margin-bottom:14px;line-height:1.7">
@@ -716,7 +716,7 @@ input[type=number]{font-size:16px;padding:10px 12px}
       <div class="code-block" id="gs-code-block"></div>
     </div>
   </div>
-  <div id="adm-misc" class="sc" style="display:none">
+  <div id="adm-misc" class="stab" style="display:none">
     <div class="card"><div class="card-t">データ操作</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn bd-btn" onclick="resetAll()">全データリセット</button>
@@ -1167,7 +1167,7 @@ async function submitGrpReserve(){
   S.reservations.push({id:Date.now(),orgId:org.id,orgName:org.name,memberName:member,
     items:grpCart.map(c=>({productId:c.id,productName:c.name,qty:c.qty,price:c.price})),
     status:'pending',createdAt:now,createdBy:op?.name,completedAt:null,note});
-  addLog('GRP',`団体予約: ${org.name} / ${member}`,op?.name);
+  const grpResLogTxt=`団体予約: ${org.name} / ${member}`;addLog('GRP',grpResLogTxt,op?.name);dcSend('GRP',grpResLogTxt,op?.name);
   grpCart=[];toast(`「${org.name}」の予約を作成しました`);
   goGrpTab('gt-hist',document.querySelector('#sc-grp .anav .anb'));
 }
@@ -1183,7 +1183,7 @@ function completeReservation(id){
   renderGrpHist();toast('受け渡しを完了しました');
 }
 function renderGrpOrgs(){document.getElementById('grp-org-list').innerHTML=S.orgs.length?S.orgs.map((o,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:var(--bd2);font-size:12px"><div style="flex:1"><div style="font-weight:500">${o.name}</div><div style="font-size:10px;color:var(--tx3)">${o.memo||''}</div></div><button class="btn bs bd-btn" onclick="delOrg(${i})">削除</button></div>`).join(''):'<div class="empty">登録された団体がありません</div>';}
-function addOrg(){const n=document.getElementById('org-n').value.trim();if(!n){toast('団体名が必要です',false);return;}if(S.orgs.find(o=>o.name===n)){toast('既に登録されています',false);return;}S.orgs.push({id:Date.now(),name:n,memo:document.getElementById('org-m').value.trim()});addLog('ADMIN',`団体「${n}」追加`,op?.name);save();['org-n','org-m'].forEach(id=>document.getElementById(id).value='');renderGrpOrgs();toast(`「${n}」を追加しました`);}
+function addOrg(){const n=document.getElementById('org-n').value.trim();if(!n){toast('団体名が必要です',false);return;}if(S.orgs.find(o=>o.name===n)){toast('既に登録されています',false);return;}S.orgs.push({id:Date.now(),name:n,memo:document.getElementById('org-m').value.trim()});const addOrgTxt=`団体「${n}」追加`;addLog('ADMIN',addOrgTxt,op?.name);dcSend('ADMIN',addOrgTxt,op?.name);save();['org-n','org-m'].forEach(id=>document.getElementById(id).value='');renderGrpOrgs();toast(`「${n}」を追加しました`);}
 function delOrg(i){const n=S.orgs[i].name;if(!confirm(`「${n}」を削除しますか？`))return;S.orgs.splice(i,1);save();renderGrpOrgs();}
 
 // ═══════════════════════════════
@@ -1266,7 +1266,7 @@ function saveStockEdits(type){
     if(item){changes.push(`${item.name}: ${item.qty}→${val}`);item.qty=Math.max(0,val);}
   });
   if(!changes.length){toast('変更はありません');return;}
-  addLog('STK',`在庫修正(${type==='prod'?'商品':'素材'}): ${changes.join(' / ')}`,op?.name);
+  const stkLogTxt=`在庫修正(${type==='prod'?'商品':'素材'}): ${changes.join(' / ')}`;addLog('STK',stkLogTxt,op?.name);dcSend('STK',stkLogTxt,op?.name);
   Object.keys(stkEdits).filter(k=>k.startsWith(type)).forEach(k=>delete stkEdits[k]);
   if(type==='prod'){if(stkCat)openStkCat(stkCat);else openStock();}
   else{if(matCat)openMatCat(matCat);else openMatMgmt();}
@@ -1358,9 +1358,9 @@ function renderAdmProds(){document.getElementById('adm-prod-tb').innerHTML=S.pro
   <td><span class="badge ${s.c}">${s.l}</span></td>
   <td><button class="btn bs bd-btn" onclick="delProd(${i})">削除</button></td>
 </tr>`}).join(''):`<tr><td colspan='8'><div class='empty'>なし</div></td></tr>`;}
-function chgPQ(i,v){addLog('ADMIN',`商品「${S.products[i].name}」在庫変更 ${S.products[i].qty}→${+v}`,op?.name);S.products[i].qty=Math.max(0,+v);save();}
-function addProd(){const n=document.getElementById('ap-n').value.trim();if(!n){toast('商品名が必要です',false);return;}S.products.push({id:Date.now(),name:n,category:document.getElementById('ap-c').value.trim(),qty:parseInt(document.getElementById('ap-q').value)||0,price:parseInt(document.getElementById('ap-p').value)||0,threshold:parseInt(document.getElementById('ap-t').value)||3,recipe:[]});addLog('ADMIN',`商品「${n}」追加`,op?.name);['ap-n','ap-c','ap-q','ap-p','ap-t'].forEach(id=>document.getElementById(id).value='');renderAdmProds();toast(`「${n}」を追加しました`);}
-function delProd(i){const n=S.products[i].name;S.products.splice(i,1);addLog('ADMIN',`商品「${n}」削除`,op?.name);save();renderAdmProds();}
+function chgPQ(i,v){const chgPQTxt=`商品「${S.products[i].name}」在庫変更 ${S.products[i].qty}→${+v}`;addLog('ADMIN',chgPQTxt,op?.name);dcSend('ADMIN',chgPQTxt,op?.name);S.products[i].qty=Math.max(0,+v);save();}
+function addProd(){const n=document.getElementById('ap-n').value.trim();if(!n){toast('商品名が必要です',false);return;}S.products.push({id:Date.now(),name:n,category:document.getElementById('ap-c').value.trim(),qty:parseInt(document.getElementById('ap-q').value)||0,price:parseInt(document.getElementById('ap-p').value)||0,threshold:parseInt(document.getElementById('ap-t').value)||3,recipe:[]});const addPTxt=`商品「${n}」追加`;addLog('ADMIN',addPTxt,op?.name);dcSend('ADMIN',addPTxt,op?.name);['ap-n','ap-c','ap-q','ap-p','ap-t'].forEach(id=>document.getElementById(id).value='');renderAdmProds();toast(`「${n}」を追加しました`);}
+function delProd(i){const n=S.products[i].name;S.products.splice(i,1);const delPTxt=`商品「${n}」削除`;addLog('ADMIN',delPTxt,op?.name);dcSend('ADMIN',delPTxt,op?.name);save();renderAdmProds();}
 /* 素材 */
 function renderAdmMats(){document.getElementById('adm-mat-tb').innerHTML=S.materials.length?S.materials.map((m,i)=>{const s=sts(m);return`<tr>
   <td><input value="${m.name}" style="width:135px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" onchange="S.materials[${i}].name=this.value;save()"></td>
@@ -1371,9 +1371,9 @@ function renderAdmMats(){document.getElementById('adm-mat-tb').innerHTML=S.mater
   <td><span class="badge ${s.c}">${s.l}</span></td>
   <td><button class="btn bs bd-btn" onclick="delMat(${i})">削除</button></td>
 </tr>`}).join(''):`<tr><td colspan='8'><div class='empty'>なし</div></td></tr>`;}
-function chgMQ(i,v){addLog('ADMIN',`素材「${S.materials[i].name}」在庫変更 ${S.materials[i].qty}→${+v}`,op?.name);S.materials[i].qty=Math.max(0,+v);save();}
-function addMat(){const n=document.getElementById('am-n').value.trim();if(!n){toast('素材名が必要です',false);return;}S.materials.push({id:Date.now(),name:n,category:document.getElementById('am-c').value.trim(),qty:parseInt(document.getElementById('am-q').value)||0,unit:document.getElementById('am-u').value.trim()||'個',threshold:parseInt(document.getElementById('am-t').value)||5,buyPrice:parseInt(document.getElementById('am-bp').value)||0});addLog('ADMIN',`素材「${n}」追加`,op?.name);['am-n','am-c','am-q','am-u','am-t','am-bp'].forEach(id=>document.getElementById(id).value='');renderAdmMats();toast(`「${n}」を追加しました`);}
-function delMat(i){const n=S.materials[i].name;S.materials.splice(i,1);addLog('ADMIN',`素材「${n}」削除`,op?.name);save();renderAdmMats();}
+function chgMQ(i,v){const chgMQTxt=`素材「${S.materials[i].name}」在庫変更 ${S.materials[i].qty}→${+v}`;addLog('ADMIN',chgMQTxt,op?.name);dcSend('ADMIN',chgMQTxt,op?.name);S.materials[i].qty=Math.max(0,+v);save();}
+function addMat(){const n=document.getElementById('am-n').value.trim();if(!n){toast('素材名が必要です',false);return;}S.materials.push({id:Date.now(),name:n,category:document.getElementById('am-c').value.trim(),qty:parseInt(document.getElementById('am-q').value)||0,unit:document.getElementById('am-u').value.trim()||'個',threshold:parseInt(document.getElementById('am-t').value)||5,buyPrice:parseInt(document.getElementById('am-bp').value)||0});const addMTxt=`素材「${n}」追加`;addLog('ADMIN',addMTxt,op?.name);dcSend('ADMIN',addMTxt,op?.name);['am-n','am-c','am-q','am-u','am-t','am-bp'].forEach(id=>document.getElementById(id).value='');renderAdmMats();toast(`「${n}」を追加しました`);}
+function delMat(i){const n=S.materials[i].name;S.materials.splice(i,1);const delMTxt=`素材「${n}」削除`;addLog('ADMIN',delMTxt,op?.name);dcSend('ADMIN',delMTxt,op?.name);save();renderAdmMats();}
 /* 素材買い取り (独立メニュー) */
 let selBmMatId = null;
 function openBuymatScreen(){
@@ -1441,7 +1441,7 @@ async function submitBuyMatNew(){
 function renderRecipeTab(){const sel=document.getElementById('recipe-prod-sel');sel.innerHTML='<option value="">-- 商品を選択 --</option>'+S.products.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');document.getElementById('recipe-add-mat').innerHTML='<option value="">-- 素材 --</option>'+S.materials.map(m=>`<option value="${m.id}">${m.name} (${m.unit||'個'})</option>`).join('');renderRecipeEditor();}
 function renderRecipeEditor(){const pid=parseInt(document.getElementById('recipe-prod-sel').value);const prod=S.products.find(p=>p.id===pid);document.getElementById('recipe-editor').style.display=prod?'block':'none';if(!prod)return;document.getElementById('recipe-ed-title').textContent=`「${prod.name}」のレシピ`;const lines=document.getElementById('recipe-lines');if(!prod.recipe||!prod.recipe.length){lines.innerHTML='<div class="empty" style="padding:12px">素材がまだ設定されていません</div>';return;}lines.innerHTML=prod.recipe.map((r,i)=>{const m=S.materials.find(x=>x.id===r.matId);return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:var(--bd2)"><span style="flex:1;font-size:12px;font-weight:500">${m?m.name:'不明'}</span><span style="font-size:11px;color:var(--tx2)">1個あたり</span><input type="number" value="${r.amount}" min="0.1" step="0.1" style="width:68px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" onchange="updateRL(${pid},${i},this.value)"><span style="font-size:11px;color:var(--tx2)">${m?m.unit||'個':'個'}</span><button class="btn bs bd-btn" onclick="removeRL(${pid},${i})">×</button></div>`;}).join('');}
 function updateRL(pid,i,v){const p=S.products.find(x=>x.id===pid);if(p&&p.recipe[i])p.recipe[i].amount=parseFloat(v)||1;save();}
-function addRecipeLine(){const pid=parseInt(document.getElementById('recipe-prod-sel').value);const mid=parseInt(document.getElementById('recipe-add-mat').value);const amt=parseFloat(document.getElementById('recipe-add-amt').value)||1;const prod=S.products.find(p=>p.id===pid);if(!prod||!mid){toast('商品と素材を選んでください',false);return;}if(!prod.recipe)prod.recipe=[];if(prod.recipe.find(r=>r.matId===mid)){toast('既に追加済みです',false);return;}prod.recipe.push({matId:mid,amount:amt});addLog('ADMIN',`レシピ更新: ${prod.name}`,op?.name);save();document.getElementById('recipe-add-mat').value='';document.getElementById('recipe-add-amt').value='';renderRecipeEditor();toast('素材を追加しました');}
+function addRecipeLine(){const pid=parseInt(document.getElementById('recipe-prod-sel').value);const mid=parseInt(document.getElementById('recipe-add-mat').value);const amt=parseFloat(document.getElementById('recipe-add-amt').value)||1;const prod=S.products.find(p=>p.id===pid);if(!prod||!mid){toast('商品と素材を選んでください',false);return;}if(!prod.recipe)prod.recipe=[];if(prod.recipe.find(r=>r.matId===mid)){toast('既に追加済みです',false);return;}prod.recipe.push({matId:mid,amount:amt});const recipeTxt=`レシピ更新: ${prod.name}`;addLog('ADMIN',recipeTxt,op?.name);dcSend('ADMIN',recipeTxt,op?.name);save();document.getElementById('recipe-add-mat').value='';document.getElementById('recipe-add-amt').value='';renderRecipeEditor();toast('素材を追加しました');}
 function removeRL(pid,i){const p=S.products.find(x=>x.id===pid);if(p&&p.recipe)p.recipe.splice(i,1);save();renderRecipeEditor();}
 /* 権限設定 */
 function renderPermTable(){
@@ -1461,7 +1461,7 @@ function renderPermTable(){
   document.getElementById('perm-table').innerHTML=html;
 }
 function onPermChange(el){const role=el.getAttribute('data-role');const feat=el.getAttribute('data-feat');if(!S.permConfig)S.permConfig=JSON.parse(JSON.stringify(DEFAULT_PERM));if(!S.permConfig[role])S.permConfig[role]=[];if(el.checked){if(!S.permConfig[role].includes(feat))S.permConfig[role].push(feat);}else S.permConfig[role]=S.permConfig[role].filter(f=>f!==feat);}
-function savePermConfig(){if(!S.permConfig)S.permConfig=JSON.parse(JSON.stringify(DEFAULT_PERM));if(!S.permConfig.admin)S.permConfig.admin=[];if(!S.permConfig.admin.includes('admin'))S.permConfig.admin.push('admin');addLog('ADMIN','権限設定を変更',op?.name);save();toast('権限設定を保存しました');}
+function savePermConfig(){if(!S.permConfig)S.permConfig=JSON.parse(JSON.stringify(DEFAULT_PERM));if(!S.permConfig.admin)S.permConfig.admin=[];if(!S.permConfig.admin.includes('admin'))S.permConfig.admin.push('admin');addLog('ADMIN','権限設定を変更',op?.name);dcSend('ADMIN','権限設定を変更',op?.name);save();toast('権限設定を保存しました');}
 /* 担当者 */
 function renderAdmMembers(){document.getElementById('adm-mem-list').innerHTML=S.members.length?S.members.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:var(--bd2)">
   <div style="width:30px;height:30px;border-radius:50%;background:rgba(224,124,16,.15);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--or);font-family:'Rajdhani',sans-serif">${m.name.slice(0,1)}</div>
@@ -1475,8 +1475,8 @@ function renderAdmMembers(){document.getElementById('adm-mem-list').innerHTML=S.
   <input type="password" maxlength="4" placeholder="PIN変更" style="width:74px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:var(--r);color:var(--tx);padding:5px 8px" onchange="S.members[${i}].pin=this.value;save();toast('PIN更新しました')">
   <button class="btn bs bd-btn" onclick="delMember(${i})">削除</button>
 </div>`).join(''):'<div class="empty">なし</div>';}
-function addMember(){const n=document.getElementById('mm-n').value.trim();if(!n){toast('名前が必要です',false);return;}const pin=document.getElementById('mm-pin').value;if(pin&&pin.length!==4){toast('PINは4桁で入力してください',false);return;}S.members.push({id:Date.now(),name:n,role:document.getElementById('mm-r').value.trim(),perm:document.getElementById('mm-p').value,pin:pin||''});addLog('ADMIN',`担当者「${n}」追加`,op?.name);save();['mm-n','mm-r','mm-pin'].forEach(id=>document.getElementById(id).value='');renderAdmMembers();toast(`「${n}」を追加しました`);}
-function delMember(i){if(op&&op.id===S.members[i].id){toast('現在ログイン中の担当者は削除できません',false);return;}const n=S.members[i].name;S.members.splice(i,1);addLog('ADMIN',`担当者「${n}」削除`,op?.name);save();renderAdmMembers();}
+function addMember(){const n=document.getElementById('mm-n').value.trim();if(!n){toast('名前が必要です',false);return;}const pin=document.getElementById('mm-pin').value;if(pin&&pin.length!==4){toast('PINは4桁で入力してください',false);return;}S.members.push({id:Date.now(),name:n,role:document.getElementById('mm-r').value.trim(),perm:document.getElementById('mm-p').value,pin:pin||''});const addMemTxt=`担当者「${n}」追加`;addLog('ADMIN',addMemTxt,op?.name);dcSend('ADMIN',addMemTxt,op?.name);save();['mm-n','mm-r','mm-pin'].forEach(id=>document.getElementById(id).value='');renderAdmMembers();toast(`「${n}」を追加しました`);}
+function delMember(i){if(op&&op.id===S.members[i].id){toast('現在ログイン中の担当者は削除できません',false);return;}const n=S.members[i].name;S.members.splice(i,1);const delMemTxt=`担当者「${n}」削除`;addLog('ADMIN',delMemTxt,op?.name);dcSend('ADMIN',delMemTxt,op?.name);save();renderAdmMembers();}
 /* ログ */
 function renderLogs(){const f=document.getElementById('log-f').value;const ls=f?S.logs.filter(l=>l.type===f):S.logs;document.getElementById('log-list').innerHTML=ls.length?ls.map(l=>`<div class="log-row"><span class="log-t">${l.t}</span><span class="lt lt-${l.type}">${l.type}</span><span class="log-txt">${l.text}</span><span class="log-by">${l.by}</span></div>`).join(''):'<div class="empty">ログがありません</div>';}
 function clearLogs(){if(!confirm('ログをすべて消去しますか？'))return;S.logs=[];save();renderLogs();toast('消去しました');}
@@ -1826,7 +1826,7 @@ function addAlchRecipe(){
   if(!arTmpOut.length){toast('生成素材を追加してください',false);return;}
   if(!S.alchRecipes)S.alchRecipes=[];
   S.alchRecipes.push({id:Date.now(),name,inputs:arTmpIn.slice(),outputs:arTmpOut.slice()});
-  addLog('ADMIN','錬金レシピ「'+name+'」を追加',op?.name);
+  const addAlchTxt='錬金レシピ「'+name+'」を追加';addLog('ADMIN',addAlchTxt,op?.name);dcSend('ADMIN',addAlchTxt,op?.name);
   save();arTmpIn=[];arTmpOut=[];document.getElementById('ar-name').value='';
   renderArTmpLists();renderAlchAdmList();
   toast('「'+name+'」を登録しました');
