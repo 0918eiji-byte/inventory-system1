@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在庫管理システム</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07091a;--bg2:#0d1328;--bg3:#121c38;--bg4:#192340;
+  --or:#e07c10;--or2:#f09520;--orb:#9a5208;--ord:#2a1604;
+  --tx:#dce4f0;--tx2:#8892a4;--tx3:#3e4d68;
+  --bd:1px solid #9a5208;--bd2:1px solid #1c2a45;
+  --r:6px;--r2:10px;
+  --ok:#1D9E75;--ng:#e24b4a;--sw:210px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--tx);font-family:'Noto Sans JP',sans-serif;font-size:13px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--orb);border-radius:2px}
+
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* HEADER */
+#hdr{
+  flex-shrink:0;background:var(--bg2);border-bottom:2px solid var(--or);
+  padding:10px 20px;display:flex;align-items:center;justify-content:space-between;
+  position:relative;overflow:hidden;
+}
+#hdr::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(-55deg,transparent,transparent 18px,rgba(255,120,0,.03) 18px,rgba(255,120,0,.03) 19px);
+}
+.hdr-left{z-index:1}
+.hdr-title{font-family:'Rajdhani',sans-serif;font-size:21px;font-weight:700;color:var(--or);letter-spacing:4px;text-transform:uppercase}
+.hdr-sub{font-size:9px;color:var(--tx2);letter-spacing:3px;text-transform:uppercase;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:10px;z-index:1}
+.op-chip{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg3);border:var(--bd);border-radius:20px;font-size:11px;cursor:pointer;transition:background .15s;font-family:'Rajdhani',sans-serif;letter-spacing:1px}
+.op-chip:hover{background:var(--bg4)}
+.op-dot{width:7px;height:7px;border-radius:50%;background:var(--or);flex-shrink:0}
+#sync-status{font-size:10px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;color:var(--tx3);display:flex;align-items:center;gap:5px}
+#sync-status.syncing{color:var(--or)}
+#sync-status.ok{color:var(--ok)}
+#sync-status.err{color:var(--ng)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* BODY */
+#body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+#sidebar{width:var(--sw);flex-shrink:0;background:var(--bg2);border-right:var(--bd);display:flex;flex-direction:column;overflow-y:auto;padding:8px 0}
+.sitem{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;color:var(--tx2);transition:all .15s;border-left:3px solid transparent;user-select:none}
+.sitem:hover{background:var(--bg3);color:var(--tx)}
+.sitem.on{background:var(--ord);color:var(--or);border-left-color:var(--or)}
+.sitem.disabled{opacity:.35;pointer-events:none}
+.sitem-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0}
+.sitem-lbl{font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:1.5px;text-transform:uppercase}
+.sdiv{height:.5px;background:var(--bg4);margin:6px 12px}
+.sgrp{font-size:9px;color:var(--tx3);letter-spacing:2px;text-transform:uppercase;padding:8px 16px 3px}
+
+/* CONTENT */
+#content{flex:1;overflow-y:auto;padding:16px 20px;scrollbar-width:thin;scrollbar-color:var(--orb) var(--bg2)}
+.sc{display:none}.sc.on{display:block}
+
+/* CARDS */
+.card{background:var(--bg2);border:var(--bd);border-radius:var(--r2);padding:16px 18px;margin-bottom:14px}
+.card-t{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;color:var(--or);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-t::before{content:'♦';font-size:9px;color:var(--orb)}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:var(--bd2)}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.met{background:var(--bg2);border:var(--bd);border-radius:var(--r2);padding:14px 16px;position:relative;overflow:hidden}
+.met::after{content:'';position:absolute;right:-12px;top:-12px;width:50px;height:50px;border-radius:50%;background:rgba(224,124,16,.07)}
+.met-l{font-size:9px;color:var(--tx2);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.met-v{font-size:20px;font-weight:700;font-family:'Rajdhani',sans-serif}
+.met-s{font-size:10px;color:var(--tx3);margin-top:2px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+thead tr{background:var(--bg3);border-bottom:1px solid var(--orb)}
+th{text-align:left;color:var(--or);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:8px 10px}
+td{padding:7px 10px;border-bottom:var(--bd2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:hover td{background:var(--bg3)}
+tr:last-child td{border-bottom:none}
+
+/* FORMS */
+.fg{margin-bottom:10px}
+label.lbl{font-size:9px;color:var(--tx2);display:block;margin-bottom:4px;letter-spacing:2px;text-transform:uppercase}
+input,select,textarea{width:100%;padding:8px 12px;background:var(--bg3);border:var(--bd2);border-radius:var(--r);color:var(--tx);font-family:'Noto Sans JP',sans-serif;font-size:13px;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--or);box-shadow:0 0 0 2px rgba(224,124,16,.12)}
+input::placeholder{color:var(--tx3)}
+select option{background:var(--bg2)}
+
+/* BUTTONS */
+.btn{padding:7px 16px;font-size:12px;font-weight:600;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--orb);border-radius:var(--r);background:var(--bg3);color:var(--tx);cursor:pointer;transition:all .15s}
+.btn:hover{background:var(--bg4);border-color:var(--or)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.bp{background:var(--or);color:#000;border-color:var(--or);font-weight:700}
+.bp:hover{background:var(--or2);border-color:var(--or2)}
+.bd-btn{background:rgba(226,75,74,.12);color:#d07070;border-color:#6a2828}
+.bd-btn:hover{background:rgba(226,75,74,.22)}
+.bs{padding:4px 10px;font-size:11px}
+
+/* BADGES */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;font-family:'Rajdhani',sans-serif;letter-spacing:.5px}
+.b-ok{background:rgba(29,158,117,.2);color:#1D9E75;border:1px solid rgba(29,158,117,.4)}
+.b-low{background:rgba(224,124,16,.2);color:var(--or);border:1px solid rgba(224,124,16,.4)}
+.b-out{background:rgba(226,75,74,.2);color:#d07070;border:1px solid rgba(226,75,74,.4)}
+.b-pend{background:rgba(224,124,16,.15);color:var(--or);border:1px solid rgba(224,124,16,.4)}
+.b-done{background:rgba(29,158,117,.15);color:#1D9E75;border:1px solid rgba(29,158,117,.4)}
+.b-adm{background:rgba(226,75,74,.15);color:#d07070;border:1px solid rgba(226,75,74,.3)}
+.b-chief{background:rgba(56,138,221,.15);color:#5898dd;border:1px solid rgba(56,138,221,.3)}
+.b-staff{background:rgba(29,158,117,.15);color:#1D9E75;border:1px solid rgba(29,158,117,.3)}
+
+/* ALERTS */
+.alertbar{background:rgba(224,124,16,.1);border:1px solid var(--orb);border-radius:var(--r);padding:8px 14px;font-size:12px;color:var(--or);margin-bottom:12px}
+
+/* LOGIN OVERLAY */
+#login-ov{position:fixed;inset:0;z-index:1000;background:rgba(3,5,16,.93);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+#login-ov.hidden{display:none}
+.lcard{background:var(--bg2);border:1.5px solid var(--or);border-radius:var(--r2);padding:24px 28px;width:460px;box-shadow:0 0 50px rgba(224,124,16,.18)}
+.lhdr{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--or);letter-spacing:3px;text-transform:uppercase;margin-bottom:18px;padding-left:10px;border-left:3px solid var(--or)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mbtn{padding:11px 12px;font-size:12px;font-weight:600;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;background:var(--bg3);border:1px solid #232e4a;border-radius:var(--r);color:var(--tx);cursor:pointer;transition:all .15s;text-align:center}
+.mbtn:hover{background:var(--bg4);border-color:var(--orb);color:var(--or)}
+.mbtn.sel{background:var(--ord);border-color:var(--or);color:var(--or)}
+.cancel-t{text-align:center;font-size:10px;color:var(--tx3);cursor:pointer;letter-spacing:3px;text-transform:uppercase;margin-top:10px;transition:color .15s}
+.cancel-t:hover{color:var(--tx2)}
+
+/* PIN */
+.pdots{text-align:center;margin-bottom:14px}
+.pd{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid #232e4a;margin:0 4px;transition:all .1s}
+.pd.on{background:var(--or);border-color:var(--or)}
+.ppad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto}
+.pkey{padding:13px;font-size:18px;font-weight:700;font-family:'Rajdhani',sans-serif;background:var(--bg3);border:1px solid #232e4a;border-radius:var(--r);cursor:pointer;text-align:center;transition:all .15s}
+.pkey:hover{background:var(--bg4);border-color:var(--orb);color:var(--or)}
+.perr{color:#d07070;font-size:11px;text-align:center;height:16px;margin-top:6px}
+
+/* PRODUCT GRID */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;margin-bottom:10px}
+.pcard{background:var(--bg3);border:1px solid #1c2a45;border-radius:var(--r2);padding:10px 12px;cursor:pointer;transition:all .12s}
+.pcard:hover{border-color:var(--orb);background:var(--bg4)}
+.pcard.dis{opacity:.4;pointer-events:none}
+.pc-name{font-size:12px;font-weight:500;margin-bottom:2px}
+.pc-cat{font-size:10px;color:var(--tx3)}
+.pc-price{font-size:13px;color:var(--or);font-weight:700;margin-top:4px;font-family:'Rajdhani',sans-serif}
+.pc-stock{font-size:10px;color:var(--tx2)}
+
+/* CART */
+.ci{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:var(--bd2);font-size:12px}
+.ci:last-child{border-bottom:none}
+.ci-name{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ci-qty{width:52px}
+.ci-sub{color:var(--or);min-width:72px;text-align:right;flex-shrink:0;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600}
+.calcbox{background:var(--bg3);border:var(--bd2);border-radius:var(--r);padding:12px;font-size:12px;margin-top:10px}
+.calc-row{display:flex;justify-content:space-between;padding:2px 0;color:var(--tx2)}
+.calc-total{display:flex;justify-content:space-between;font-size:15px;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--or);border-top:var(--bd2);margin-top:6px;padding-top:6px}
+
+/* LAYOUT UTILS */
+.two-col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.empty{text-align:center;padding:32px;color:var(--tx3);font-size:12px;letter-spacing:1px}
+
+/* CAT TABS */
+.ctabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.ct{padding:4px 12px;border:1px solid #1c2a45;border-radius:20px;font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:1px;cursor:pointer;color:var(--tx2);transition:all .12s}
+.ct:hover{border-color:var(--orb);color:var(--tx)}
+.ct.on{background:var(--ord);border-color:var(--or);color:var(--or)}
+
+/* CRAFT */
+.craft-card{background:var(--bg3);border:1px solid #1c2a45;border-radius:var(--r2);padding:12px;cursor:pointer;transition:all .12s;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.craft-card:hover{border-color:var(--orb);background:var(--bg4)}
+.craft-card.sel{border:1.5px solid var(--or);background:var(--ord)}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:var(--bd2);font-size:12px}
+.mrow:last-child{border-bottom:none}
+.mbarw{width:60px;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:4px}
+.mbar{height:3px;border-radius:2px}
+.rbox{background:rgba(29,158,117,.1);border:1px solid rgba(29,158,117,.3);border-radius:var(--r);padding:10px;margin-top:8px;font-size:12px}
+.rrow{display:flex;justify-content:space-between;padding:2px 0}
+
+/* STOCK */
+.sshdr{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--r2) var(--r2) 0 0;border:var(--bd);border-bottom:none;background:var(--bg3)}
+.ssbody{border:var(--bd);border-top:none;border-radius:0 0 var(--r2) var(--r2);margin-bottom:14px;overflow:hidden}
+.sicon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.stk-item{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,.7fr) auto auto;align-items:center;gap:10px;padding:10px 16px;border-bottom:var(--bd2);transition:background .1s}
+.stk-item:last-child{border-bottom:none}
+.stk-item:hover{background:var(--bg3)}
+.stk-item.changed{background:rgba(224,124,16,.07)}
+.sbarw{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:4px}
+.sbar{height:3px;border-radius:2px}
+.sinp{width:72px;text-align:right;padding:5px 8px;font-size:13px;font-weight:700;font-family:'Rajdhani',sans-serif;background:var(--bg);border:var(--bd2);border-radius:var(--r);color:var(--tx)}
+.sinp:focus{border-color:var(--or);outline:none}
+.savebar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--bg3);border:var(--bd);border-radius:var(--r2);margin-top:4px;margin-bottom:14px}
+
+/* CAT CARDS */
+.ccgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;margin-bottom:14px}
+.ccard{background:var(--bg2);border:var(--bd2);border-radius:var(--r2);padding:16px 10px;cursor:pointer;text-align:center;transition:all .12s}
+.ccard:hover{border-color:var(--orb);background:var(--bg3)}
+.ccard.on{border:1.5px solid var(--or);background:var(--ord)}
+.ccard-name{font-size:12px;font-weight:600;font-family:'Rajdhani',sans-serif;letter-spacing:1px;margin-bottom:4px}
+.ccard-count{font-size:10px;color:var(--tx2)}
+
+/* RES CARD */
+.rescard{background:var(--bg2);border:var(--bd2);border-radius:var(--r2);padding:14px;margin-bottom:10px;transition:border-color .15s}
+.rescard:hover{border-color:var(--orb)}
+
+/* PERM TABLE */
+.ptbl{width:100%;border-collapse:collapse;font-size:12px}
+.ptbl th{padding:8px 10px;background:var(--bg3);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;color:var(--or);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--orb);text-align:center}
+.ptbl th:first-child{text-align:left}
+.ptbl td{padding:8px 10px;border-bottom:var(--bd2);text-align:center;vertical-align:middle}
+.ptbl td:first-child{text-align:left;font-weight:500}
+.ptbl tr:last-child td{border-bottom:none}
+.ptbl input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--or)}
+
+/* LOG */
+.log-row{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:var(--bd2);font-size:12px}
+.log-row:last-child{border-bottom:none}
+.log-t{color:var(--tx3);font-size:10px;min-width:76px;font-family:'Rajdhani',sans-serif}
+.lt{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;font-family:'Rajdhani',sans-serif;white-space:nowrap}
+.lt-SALE{background:rgba(29,158,117,.2);color:#1D9E75}
+.lt-CRAFT{background:rgba(56,138,221,.2);color:#5898dd}
+.lt-BUY{background:rgba(224,124,16,.2);color:var(--or)}
+.lt-ADMIN{background:rgba(127,100,221,.2);color:#8b70dd}
+.lt-GRP{background:rgba(212,74,126,.2);color:#d46a9a}
+.lt-STK{background:rgba(100,120,150,.2);color:#8892a4}
+.log-txt{flex:1;color:var(--tx2)}
+.log-by{color:var(--tx3);font-size:10px;white-space:nowrap}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:var(--r);font-size:13px;font-weight:700;font-family:'Rajdhani',sans-serif;letter-spacing:1px;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.on{opacity:1}
+
+/* ADMIN NAV (sub-tabs) */
+.anav{display:flex;gap:2px;border-bottom:var(--bd2);margin-bottom:14px;flex-wrap:wrap}
+.anb{padding:7px 12px;font-size:11px;font-weight:600;font-family:'Rajdhani',sans-serif;letter-spacing:1px;text-transform:uppercase;border:none;background:none;color:var(--tx3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-.5px;transition:color .15s}
+.anb:hover{color:var(--tx2)}
+.anb.on{color:var(--or);border-bottom-color:var(--or)}
+
+/* CODE BLOCK (GS template) */
+.code-block{background:#050910;border:1px solid #1c2a45;border-radius:var(--r);padding:12px 14px;font-family:monospace;font-size:11px;color:#9ab;overflow-x:auto;white-space:pre;line-height:1.6;margin-top:8px;max-height:280px;overflow-y:auto}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<div id="hdr">
+  <div class="hdr-left">
+    <div class="hdr-title">在庫管理システム</div>
+    <div class="hdr-sub">Inventory Management System</div>
+  </div>
+  <div class="hdr-right">
+    <div id="sync-status" class=""><div class="sync-dot"></div><span id="sync-txt">LOCAL</span></div>
+    <div class="op-chip" id="op-chip" onclick="doLogout()" style="display:none">
+      <div class="op-dot"></div><span id="op-name">—</span><span style="color:var(--tx3);font-size:10px">▼ LOGOUT</span>
+    </div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div id="body">
+
+<!-- SIDEBAR -->
+<div id="sidebar" style="display:none">
+  <div class="sgrp">MAIN</div>
+  <div class="sitem" id="si-sale" onclick="goSc('sale',this)"><div class="sitem-icon">✦</div><div class="sitem-lbl">販売報告</div></div>
+  <div class="sitem" id="si-craft" onclick="goSc('craft',this)"><div class="sitem-icon">◈</div><div class="sitem-lbl">クラフト制作</div></div>
+  <div class="sitem" id="si-grp" onclick="goSc('grp',this)"><div class="sitem-icon">◉</div><div class="sitem-lbl">団体販売</div></div>
+  <div class="sdiv"></div>
+  <div class="sgrp">在庫</div>
+  <div class="sitem" id="si-stock" onclick="goSc('stock',this)"><div class="sitem-icon">▣</div><div class="sitem-lbl">在庫管理</div></div>
+  <div class="sitem" id="si-buymat" onclick="goSc('buymat',this)"><div class="sitem-icon">◇</div><div class="sitem-lbl">素材買い取り</div></div>
+  <div class="sitem" id="si-matmgmt" onclick="goSc('matmgmt',this)"><div class="sitem-icon">◆</div><div class="sitem-lbl">素材管理</div></div>
+  <div class="sdiv"></div>
+  <div class="sgrp">SYSTEM</div>
+  <div class="sitem" id="si-admin" onclick="goSc('admin',this)"><div class="sitem-icon">⚙</div><div class="sitem-lbl">管理・ログ</div></div>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+
+<!-- 販売報告 -->
+<div id="sc-sale" class="sc">
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="card-t">商品カタログ</div>
+        <div class="ctabs" id="sale-cats"></div>
+        <div class="pgrid" id="sale-grid"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><div class="card-t" style="margin:0">カート</div><button class="btn bs" onclick="saleCart=[];renderSaleCart()">CLEAR</button></div>
+        <div id="sale-cart-body"><div class="empty">商品を選んで追加</div></div>
+        <div id="sale-calc" class="calcbox" style="display:none"></div>
+      </div>
+      <div class="fg"><label class="lbl">備考</label><textarea id="sale-note" rows="2"></textarea></div>
+      <button class="btn bp" style="width:100%" onclick="submitSale()">販売を確定する</button>
+    </div>
+    <div class="card"><div class="card-t">集計</div><div id="sale-summary"><div class="empty">カートに追加すると表示されます</div></div></div>
+  </div>
+</div>
+
+<!-- クラフト -->
+<div id="sc-craft" class="sc">
+  <div class="two-col">
+    <div>
+      <div class="card"><div class="card-t">制作する商品を選択</div><div id="craft-list"></div></div>
+      <div id="craft-qty-wrap" style="display:none">
+        <div class="card">
+          <div class="card-t" id="craft-sel-name">制作数</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <input id="craft-qty" type="number" min="1" value="1" style="width:100px" oninput="renderCraftPreview()">
+            <span id="craft-max" style="font-size:12px;color:var(--tx2)"></span>
+          </div>
+        </div>
+        <div class="fg"><label class="lbl">備考</label><textarea id="craft-note" rows="2"></textarea></div>
+        <button class="btn" id="craft-btn" style="width:100%" onclick="submitCraft()">クラフトを確定する</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-t">素材消費 / 生産プレビュー</div><div id="craft-preview"><div class="empty">商品を選択してください</div></div></div>
+  </div>
+</div>
+
+<!-- 団体販売 -->
+<div id="sc-grp" class="sc">
+  <div class="anav">
+    <button class="anb on" onclick="goGrpTab('gt-hist',this)">予約履歴</button>
+    <button class="anb" onclick="goGrpTab('gt-new',this)">予約作成</button>
+    <button class="anb" onclick="goGrpTab('gt-orgs',this)">団体登録</button>
+  </div>
+  <div id="gt-hist" class="sc on">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--or);letter-spacing:1px">予約一覧</div>
+      <select id="grp-hf" onchange="renderGrpHist()" style="width:auto;font-size:11px;padding:4px 8px">
+        <option value="">すべて</option><option value="pending">予約中</option><option value="completed">完了</option>
+      </select>
+    </div>
+    <div id="grp-hist-list"></div>
+  </div>
+  <div id="gt-new" class="sc" style="display:none">
+    <div class="two-col">
+      <div>
+        <div class="card">
+          <div class="card-t">予約情報</div>
+          <div class="fg"><label class="lbl">団体名</label><select id="grp-org-sel" onchange="renderGrpSummary()"><option value="">-- 団体を選択 --</option></select></div>
+          <div class="fg"><label class="lbl">メンバー名</label><input id="grp-member" placeholder="氏名を入力" oninput="renderGrpSummary()"></div>
+        </div>
+        <div class="card">
+          <div class="card-t">商品を選択</div>
+          <div class="ctabs" id="grp-cats"></div>
+          <div class="pgrid" id="grp-grid"></div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><div class="card-t" style="margin:0">カート</div><button class="btn bs" onclick="grpCart=[];renderGrpCart()">CLEAR</button></div>
+          <div id="grp-cart-body"><div class="empty">商品を選んで追加</div></div>
+          <div id="grp-calc" class="calcbox" style="display:none"></div>
+        </div>
+        <div class="fg"><label class="lbl">備考</label><textarea id="grp-note" rows="2"></textarea></div>
+        <button class="btn bp" style="width:100%" onclick="submitGrpReserve()">予約を確定する</button>
+      </div>
+      <div class="card"><div class="card-t">予約サマリー</div><div id="grp-summary"><div class="empty">入力すると表示されます</div></div></div>
+    </div>
+  </div>
+  <div id="gt-orgs" class="sc" style="display:none">
+    <div class="card">
+      <div class="card-t">団体を追加</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;padding:10px;background:var(--bg3);border-radius:var(--r);margin-bottom:12px">
+        <div style="flex:1"><label class="lbl">団体名</label><input id="org-n" placeholder="〇〇サークル"></div>
+        <div style="flex:1"><label class="lbl">メモ</label><input id="org-m" placeholder="備考"></div>
+        <button class="btn bp bs" onclick="addOrg()">追加</button>
+      </div>
+      <div class="card-t">登録済み団体</div>
+      <div id="grp-org-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 在庫管理（商品） -->
+<div id="sc-stock" class="sc">
+  <div id="stk-cat-view">
+    <div style="font-size:11px;color:var(--tx2);margin-bottom:12px;letter-spacing:1px">カテゴリーを選択して在庫を編集してください</div>
+    <div class="ccgrid" id="stk-cat-cards"></div>
+    <div id="stk-all-wrap">
+      <div class="sshdr" style="background:rgba(29,158,117,.08);border-color:rgba(29,158,117,.3)">
+        <div class="sicon" style="background:rgba(29,158,117,.2);color:var(--ok)">▣</div>
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--ok);letter-spacing:1px">全商品</div>
+          <div id="stk-all-info" style="font-size:11px;color:var(--tx2)"></div>
+        </div>
+      </div>
+      <div class="ssbody" id="stk-all-rows"></div>
+    </div>
+  </div>
+  <div id="stk-item-view" style="display:none">
+    <div id="stk-item-hdr" class="sshdr"></div>
+    <div class="ssbody" id="stk-item-rows"></div>
+    <div class="savebar">
+      <div style="font-size:12px;color:var(--tx2)">変更件数: <span id="stk-cnt" style="font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--or)">0</span></div>
+      <button class="btn" id="stk-save-btn" onclick="saveStockEdits('prod')">変更を保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 素材管理 -->
+<div id="sc-matmgmt" class="sc">
+  <div id="mat-cat-view">
+    <div style="font-size:11px;color:var(--tx2);margin-bottom:12px;letter-spacing:1px">カテゴリーを選択して素材在庫を編集してください</div>
+    <div class="ccgrid" id="mat-cat-cards"></div>
+    <div id="mat-all-wrap">
+      <div class="sshdr" style="background:rgba(224,124,16,.08);border-color:rgba(224,124,16,.3)">
+        <div class="sicon" style="background:rgba(224,124,16,.2);color:var(--or)">◆</div>
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--or);letter-spacing:1px">全素材</div>
+          <div id="mat-all-info" style="font-size:11px;color:var(--tx2)"></div>
+        </div>
+      </div>
+      <div class="ssbody" id="mat-all-rows"></div>
+    </div>
+  </div>
+  <div id="mat-item-view" style="display:none">
+    <div id="mat-item-hdr" class="sshdr"></div>
+    <div class="ssbody" id="mat-item-rows"></div>
+    <div class="savebar">
+      <div style="font-size:12px;color:var(--tx2)">変更件数: <span id="mat-cnt" style="font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--or)">0</span></div>
+      <button class="btn" id="mat-save-btn" onclick="saveStockEdits('mat')">変更を保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 素材買い取り -->
+<div id="sc-buymat" class="sc">
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="card-t">素材を選択</div>
+        <div class="pgrid" id="bm-prod-grid"></div>
+      </div>
+      <div id="bm-detail-wrap" style="display:none">
+        <div class="card">
+          <div class="card-t" id="bm-detail-title">買い取り数量</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+            <div style="flex:1"><label class="lbl">数量</label><input id="bm-new-qty" type="number" min="1" value="1" oninput="renderBmDetail()"></div>
+            <div id="bm-unit-label" style="font-size:12px;color:var(--tx2);padding-top:20px"></div>
+          </div>
+        </div>
+        <div class="fg"><label class="lbl">供給元・メモ</label><textarea id="bm-new-note" rows="2" placeholder="仕入れ先など..."></textarea></div>
+        <button class="btn bp" style="width:100%" onclick="submitBuyMatNew()">買い取りを確定する</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">買い取り集計</div>
+      <div id="bm-new-summary"><div class="empty">素材を選択してください</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 管理・ログ -->
+<div id="sc-admin" class="sc">
+  <div class="anav">
+    <button class="anb on" onclick="goAdmTab('adm-ov',this)">概要</button>
+    <button class="anb" onclick="goAdmTab('adm-prod',this)">商品</button>
+    <button class="anb" onclick="goAdmTab('adm-mat',this)">素材</button>
+    <button class="anb" onclick="goAdmTab('adm-recipe',this)">レシピ</button>
+    <button class="anb" onclick="goAdmTab('adm-perm',this)">権限設定</button>
+    <button class="anb" onclick="goAdmTab('adm-mem',this)">担当者</button>
+    <button class="anb" onclick="goAdmTab('adm-log',this)">ログ</button>
+    <button class="anb" onclick="goAdmTab('adm-gs',this)">Google Sheets</button>
+    <button class="anb" onclick="goAdmTab('adm-misc',this)">その他</button>
+  </div>
+  <div id="adm-ov" class="sc on">
+    <div id="adm-alerts"></div>
+    <div class="metrics" id="adm-metrics"></div>
+    <div class="two-col">
+      <div class="card"><div class="card-t">商品在庫</div><div class="tbl-wrap"><table><thead><tr><th style="width:42%">商品名</th><th style="width:22%">カテゴリ</th><th style="width:14%">在庫</th><th style="width:22%">状態</th></tr></thead><tbody id="ov-prod"></tbody></table></div></div>
+      <div class="card"><div class="card-t">素材在庫</div><div class="tbl-wrap"><table><thead><tr><th style="width:42%">素材名</th><th style="width:22%">在庫</th><th style="width:14%">単位</th><th style="width:22%">状態</th></tr></thead><tbody id="ov-mat"></tbody></table></div></div>
+    </div>
+  </div>
+  <div id="adm-prod" class="sc" style="display:none">
+    <div class="card"><div class="card-t">商品を追加</div>
+      <div class="row">
+        <div style="flex:2;min-width:100px"><label class="lbl">商品名</label><input id="ap-n" placeholder="商品名"></div>
+        <div style="flex:1;min-width:65px"><label class="lbl">カテゴリー</label><input id="ap-c"></div>
+        <div style="width:58px"><label class="lbl">初期在庫</label><input id="ap-q" type="number" min="0" placeholder="0"></div>
+        <div style="width:78px"><label class="lbl">単価(¥)</label><input id="ap-p" type="number" min="0" placeholder="0"></div>
+        <div style="width:55px"><label class="lbl">閾値</label><input id="ap-t" type="number" min="0" placeholder="3"></div>
+        <button class="btn bp bs" onclick="addProd()">追加</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-t">商品一覧</div><div class="tbl-wrap"><table style="min-width:500px"><thead><tr>
+      <th style="width:145px">商品名</th><th style="width:88px">カテゴリー</th>
+      <th style="width:63px">在庫</th><th style="width:78px">単価</th>
+      <th style="width:58px">閾値</th><th style="width:68px">状態</th><th style="width:52px">操作</th>
+    </tr></thead><tbody id="adm-prod-tb"></tbody></table></div></div>
+  </div>
+  <div id="adm-mat" class="sc" style="display:none">
+    <div class="card"><div class="card-t">素材を追加</div>
+      <div class="row">
+        <div style="flex:2;min-width:100px"><label class="lbl">素材名</label><input id="am-n" placeholder="素材名"></div>
+        <div style="flex:1;min-width:60px"><label class="lbl">カテゴリー</label><input id="am-c"></div>
+        <div style="width:58px"><label class="lbl">在庫数</label><input id="am-q" type="number" min="0" placeholder="0"></div>
+        <div style="width:44px"><label class="lbl">単位</label><input id="am-u" placeholder="枚"></div>
+        <div style="width:55px"><label class="lbl">閾値</label><input id="am-t" type="number" min="0" placeholder="5"></div>
+        <div style="width:78px"><label class="lbl">買取単価(¥)</label><input id="am-bp" type="number" min="0" placeholder="0"></div>
+        <button class="btn bp bs" onclick="addMat()">追加</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-t">素材一覧</div><div class="tbl-wrap"><table style="min-width:430px"><thead><tr>
+      <th style="width:145px">素材名</th><th style="width:88px">カテゴリー</th>
+      <th style="width:63px">在庫</th><th style="width:44px">単位</th>
+      <th style="width:55px">閾値</th><th style="width:72px">買取単価</th><th style="width:68px">状態</th><th style="width:52px">操作</th>
+    </tr></thead><tbody id="adm-mat-tb"></tbody></table></div></div>
+  </div>
+  <div id="adm-recipe" class="sc" style="display:none">
+    <div class="card"><div class="card-t">レシピを設定する商品</div>
+      <div class="fg"><label class="lbl">商品を選択</label><select id="recipe-prod-sel" onchange="renderRecipeEditor()" style="max-width:260px"><option value="">-- 商品を選択 --</option></select></div>
+    </div>
+    <div id="recipe-editor" style="display:none">
+      <div class="card">
+        <div class="card-t" id="recipe-ed-title">レシピ編集</div>
+        <div style="font-size:12px;color:var(--tx2);margin-bottom:10px">1回のクラフトで消費する素材量を設定してください</div>
+        <div id="recipe-lines"></div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:flex-end">
+          <div style="flex:1"><label class="lbl">素材</label><select id="recipe-add-mat"><option value="">-- 素材 --</option></select></div>
+          <div style="width:78px"><label class="lbl">消費数</label><input id="recipe-add-amt" type="number" min="0.1" step="0.1" placeholder="1"></div>
+          <button class="btn bp bs" onclick="addRecipeLine()">追加</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="adm-perm" class="sc" style="display:none">
+    <div class="card">
+      <div class="card-hdr"><div class="card-t" style="margin:0">権限ごとのアクセス設定</div><button class="btn bp bs" onclick="savePermConfig()">保存</button></div>
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:12px">各権限が利用できる機能を設定してください。管理者の「管理・ログ」は変更不可です。</div>
+      <div class="tbl-wrap"><table class="ptbl" id="perm-table"></table></div>
+    </div>
+    <div class="card" style="background:rgba(56,138,221,.06);border-color:rgba(56,138,221,.3)">
+      <div style="font-size:12px;color:#5898dd">ℹ 設定変更は次回ログイン時から反映されます。現在のセッションには影響しません。</div>
+    </div>
+  </div>
+  <div id="adm-mem" class="sc" style="display:none">
+    <div class="card"><div class="card-t">担当者を追加</div>
+      <div class="row">
+        <div style="flex:2;min-width:88px"><label class="lbl">名前</label><input id="mm-n" placeholder="田中 一郎"></div>
+        <div style="flex:1;min-width:66px"><label class="lbl">役職</label><input id="mm-r"></div>
+        <div style="width:86px"><label class="lbl">権限</label><select id="mm-p"><option value="staff">スタッフ</option><option value="chief">チーフ</option><option value="admin">管理者</option></select></div>
+        <div style="width:76px"><label class="lbl">PIN(4桁)</label><input id="mm-pin" type="password" maxlength="4" placeholder="0000"></div>
+        <button class="btn bp bs" onclick="addMember()">追加</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-t">担当者一覧</div><div id="adm-mem-list"></div></div>
+  </div>
+  <div id="adm-log" class="sc" style="display:none">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;margin-bottom:0;border-bottom:none;border-radius:var(--r2) var(--r2) 0 0">
+      <div class="card-t" style="margin:0">操作ログ</div>
+      <div style="display:flex;gap:8px">
+        <select id="log-f" onchange="renderLogs()" style="width:auto;font-size:11px;padding:4px 8px">
+          <option value="">すべて</option><option value="SALE">SALE</option><option value="CRAFT">CRAFT</option>
+          <option value="BUY">BUY</option><option value="GRP">GRP</option><option value="STK">STK</option><option value="ADMIN">ADMIN</option>
+        </select>
+        <button class="btn bs bd-btn" onclick="clearLogs()">消去</button>
+      </div>
+    </div>
+    <div class="card" style="border-radius:0 0 var(--r2) var(--r2);margin-top:0"><div id="log-list"></div></div>
+  </div>
+  <!-- Google Sheets 設定 -->
+  <div id="adm-gs" class="sc" style="display:none">
+    <div class="card">
+      <div class="card-t">Google Sheets 連携設定</div>
+      <div style="font-size:12px;color:var(--tx2);margin-bottom:14px;line-height:1.7">
+        複数人で同時使用する場合はGoogle Sheetsと連携することでデータの同期が可能です。<br>
+        以下の手順でApps Scriptを設定してください。
+      </div>
+      <div class="fg">
+        <label class="lbl">Web App URL</label>
+        <div style="display:flex;gap:8px">
+          <input id="gs-url" placeholder="https://script.google.com/macros/s/..." value="">
+          <button class="btn bp bs" onclick="saveGsUrl()" style="white-space:nowrap">保存</button>
+          <button class="btn bs" onclick="testGsConnection()" style="white-space:nowrap">接続テスト</button>
+        </div>
+        <div id="gs-test-result" style="font-size:11px;margin-top:6px;color:var(--tx2)"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn bp bs" onclick="gsPushNow()" id="gs-push-btn" style="display:none">今すぐ同期 (Push)</button>
+        <button class="btn bs" onclick="gsPullNow()" id="gs-pull-btn" style="display:none">Sheetsから読み込み (Pull)</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">Apps Script セットアップ手順</div>
+      <div style="font-size:12px;color:var(--tx2);line-height:1.9">
+        <div style="margin-bottom:8px"><span style="color:var(--or);font-family:'Rajdhani',sans-serif;font-weight:600">STEP 1</span> — Google スプレッドシートを新規作成</div>
+        <div style="margin-bottom:8px"><span style="color:var(--or);font-family:'Rajdhani',sans-serif;font-weight:600">STEP 2</span> — 「拡張機能」→「Apps Script」を開く</div>
+        <div style="margin-bottom:8px"><span style="color:var(--or);font-family:'Rajdhani',sans-serif;font-weight:600">STEP 3</span> — 以下のコードを貼り付けて保存</div>
+        <div style="margin-bottom:8px"><span style="color:var(--or);font-family:'Rajdhani',sans-serif;font-weight:600">STEP 4</span> — 「デプロイ」→「新しいデプロイ」→ 種類:「ウェブアプリ」、アクセス:「全員」で公開</div>
+        <div><span style="color:var(--or);font-family:'Rajdhani',sans-serif;font-weight:600">STEP 5</span> — 表示されたURLを上のフォームに貼り付けて保存</div>
+      </div>
+      <button class="btn bs" style="margin-top:10px" onclick="copyGsCode()">コードをコピー</button>
+      <div class="code-block" id="gs-code-block"></div>
+    </div>
+  </div>
+  <div id="adm-misc" class="sc" style="display:none">
+    <div class="card"><div class="card-t">データ操作</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn bd-btn" onclick="resetAll()">全データリセット</button>
+      </div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:8px">※ リセットすると全データが削除されます</div>
+    </div>
+  </div>
+</div><!-- /sc-admin -->
+
+</div><!-- /content -->
+</div><!-- /body -->
+</div><!-- /app -->
+
+<!-- LOGIN OVERLAY -->
+<div id="login-ov">
+  <div class="lcard">
+    <div id="lo-user">
+      <div class="lhdr">SELECT 担当者</div>
+      <div class="mgrid" id="member-grid"></div>
+      <div class="cancel-t" onclick="showFirstSetup()">初回設定はこちら</div>
+    </div>
+    <div id="lo-pin" style="display:none">
+      <div class="lhdr" id="pin-who">PIN を入力</div>
+      <div class="pdots" id="pin-dots"></div>
+      <div class="ppad" id="pin-pad"></div>
+      <div class="perr" id="pin-err"></div>
+      <div class="cancel-t" style="margin-top:12px" onclick="backToUserSelect()">← 戻る</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════
+//  STATE
+// ═══════════════════════════════
+const LS_KEY = 'valcol_inv';
+const SESS_KEY = 'valcol_sess';
+const GS_KEY = 'valcol_gs_url';
+
+let S = {products:[],materials:[],members:[],logs:[],orgs:[],reservations:[],permConfig:null,settings:{}};
+let op = null, pinBuf = '';
+let saleCart = [], saleCat = 'all';
+let grpCart = [], grpCat = 'all';
+let selCraftId = null;
+let stkEdits = {}, stkCat = null;
+let matEdits = {}, matCat = null;
+let gsUrl = '';
+
+const DEFAULT_PERM = {
+  admin:['sale','craft','grp','stock','buymat','matmgmt','admin'],
+  chief:['sale','craft','grp','buymat'],
+  staff:['sale','craft','grp']
+};
+const FEATURES = [
+  {id:'sale',label:'販売報告'},{id:'craft',label:'クラフト制作'},
+  {id:'grp',label:'団体販売'},{id:'stock',label:'在庫管理(商品)'},
+  {id:'buymat',label:'素材買い取り'},{id:'matmgmt',label:'素材管理'},{id:'admin',label:'管理・ログ'},
+];
+const PL={admin:'管理者',chief:'チーフ',staff:'スタッフ'};
+const PBADGE={admin:'b-adm',chief:'b-chief',staff:'b-staff'};
+
+// ═══════════════════════════════
+//  STORAGE (localStorage + GS)
+// ═══════════════════════════════
+function lsLoad(){try{const v=localStorage.getItem(LS_KEY);return v?JSON.parse(v):null;}catch(e){return null;}}
+function lsSave(data){try{localStorage.setItem(LS_KEY,JSON.stringify(data));}catch(e){}}
+function sessSave(id){try{localStorage.setItem(SESS_KEY,id?String(id):'');}catch(e){}}
+function sessLoad(){try{return parseInt(localStorage.getItem(SESS_KEY))||null;}catch(e){return null;}}
+function gsUrlLoad(){try{return localStorage.getItem(GS_KEY)||'';}catch(e){return '';}}
+function gsUrlSave(url){try{localStorage.setItem(GS_KEY,url);}catch(e){}}
+
+function setSyncStatus(state,txt){
+  const el=document.getElementById('sync-status');
+  el.className=state;document.getElementById('sync-txt').textContent=txt;
+}
+
+async function gsPush(){
+  if(!gsUrl)return;
+  setSyncStatus('syncing','SYNCING...');
+  try{
+    await fetch(gsUrl,{method:'POST',body:JSON.stringify(S),headers:{'Content-Type':'text/plain'}});
+    setSyncStatus('ok','SYNCED ✓');
+    setTimeout(()=>setSyncStatus('','SHEETS'),3000);
+  }catch(e){setSyncStatus('err','SYNC ERR');}
+}
+async function gsPull(){
+  if(!gsUrl)return;
+  setSyncStatus('syncing','LOADING...');
+  try{
+    const r=await fetch(gsUrl+'?action=load');
+    const data=await r.json();
+    if(data&&data.products){
+      S=Object.assign({products:[],materials:[],members:[],logs:[],orgs:[],reservations:[],permConfig:null,settings:{}},data);
+      if(!S.permConfig)S.permConfig=JSON.parse(JSON.stringify(DEFAULT_PERM));
+      lsSave(S);
+    }
+    setSyncStatus('ok','LOADED ✓');
+    setTimeout(()=>setSyncStatus('','SHEETS'),3000);
+    return true;
+  }catch(e){setSyncStatus('err','LOAD ERR');return false;}
+}
+
+async function save(){
+  lsSave(S);
+  if(gsUrl)gsPush();
+}
+
+// ═══════════════════════════════
+//  HELPERS
+// ═══════════════════════════════
+function addLog(type,text,by){S.logs.unshift({type,text,by:by||'—',t:new Date().toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})});if(S.logs.length>500)S.logs=S.logs.slice(0,500);save();}
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.background=ok?'var(--or)':'var(--ng)';t.style.color=ok?'#000':'#fff';t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2400);}
+function sts(item,def=3){const thr=item.threshold||def;if(item.qty===0)return{l:'在庫切れ',c:'b-out',col:'#e24b4a'};if(item.qty<=thr)return{l:'残り少',c:'b-low',col:'var(--or)'};return{l:'在庫あり',c:'b-ok',col:'var(--ok)'};}
+function permCfg(){return S.permConfig||DEFAULT_PERM;}
+function canDo(f){const cfg=permCfg();return op&&(cfg[op.perm||'staff']||[]).includes(f);}
+
+// ═══════════════════════════════
+//  INIT
+// ═══════════════════════════════
+async function init(){
+  gsUrl = gsUrlLoad();
+  const saved = lsLoad();
+  if(saved){
+    S = Object.assign({products:[],materials:[],members:[],logs:[],orgs:[],reservations:[],permConfig:null,settings:{}},saved);
+  }
+  if(!S.permConfig)S.permConfig=JSON.parse(JSON.stringify(DEFAULT_PERM));
+  if(!S.orgs)S.orgs=[];
+  if(!S.reservations)S.reservations=[];
+
+  if(gsUrl){
+    setSyncStatus('','SHEETS');
+    await gsPull();
+  }
+
+  // Try session restore
+  const sid=sessLoad();
+  if(sid){const m=S.members.find(x=>x.id===sid);if(m){op=m;enterApp();return;}}
+  renderLoginGrid();
+}
+
+// ═══════════════════════════════
+//  LOGIN
+// ═══════════════════════════════
+function renderLoginGrid(){
+  const g=document.getElementById('member-grid');
+  if(!S.members.length){
+    g.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--tx2);font-size:12px">担当者が登録されていません<br><button class="btn bp bs" style="margin-top:10px" onclick="quickAdminSetup()">管理者として始める</button></div>`;
+    return;
+  }
+  g.innerHTML=S.members.map(m=>`<div class="mbtn" onclick="selectMember(${m.id})">${m.name}<br><span style="font-size:9px;opacity:.6">${PL[m.perm||'staff']}</span></div>`).join('');
+}
+function selectMember(id){
+  op=S.members.find(m=>m.id===id);
+  if(!op)return;
+  if(!op.pin){loginSuccess();return;}
+  document.getElementById('lo-user').style.display='none';
+  document.getElementById('lo-pin').style.display='block';
+  document.getElementById('pin-who').textContent=`${op.name} — PIN を入力`;
+  pinBuf='';renderPinDots();renderPinPad();
+  document.getElementById('pin-err').textContent='';
+}
+function backToUserSelect(){
+  document.getElementById('lo-user').style.display='block';
+  document.getElementById('lo-pin').style.display='none';
+  pinBuf='';op=null;
+}
+function renderPinDots(){document.getElementById('pin-dots').innerHTML=[0,1,2,3].map(i=>`<span class="pd ${i<pinBuf.length?'on':''}"></span>`).join('');}
+function renderPinPad(){document.getElementById('pin-pad').innerHTML=['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>k===''?'<div></div>':`<button class="pkey" onclick="pinKey('${k}')">${k}</button>`).join('');}
+function pinKey(k){
+  const err=document.getElementById('pin-err');
+  if(k==='⌫'){pinBuf=pinBuf.slice(0,-1);renderPinDots();err.textContent='';return;}
+  if(pinBuf.length>=4)return;
+  pinBuf+=k;renderPinDots();
+  if(pinBuf.length===4){if(pinBuf===op.pin)loginSuccess();else{err.textContent='PIN が違います';pinBuf='';setTimeout(renderPinDots,300);}}
+}
+function loginSuccess(){
+  document.getElementById('lo-user').style.display='block';
+  document.getElementById('lo-pin').style.display='none';
+  pinBuf='';
+  sessSave(op.id);
+  enterApp();
+}
+function enterApp(){
+  document.getElementById('login-ov').classList.add('hidden');
+  document.getElementById('op-chip').style.display='flex';
+  document.getElementById('op-name').textContent=op.name;
+  document.getElementById('sidebar').style.display='flex';
+  renderSidebar();
+  // Go to first available screen
+  const firstFeat=['sale','craft','grp','stock','matmgmt','admin'].find(f=>canDo(f));
+  if(firstFeat)goSc(firstFeat,document.getElementById('si-'+firstFeat));
+}
+function showFirstSetup(){
+  if(S.members.length){toast('既に担当者が登録されています',false);return;}
+  document.getElementById('member-grid').innerHTML=`<div style="grid-column:1/-1">
+    <div class="fg"><label class="lbl">名前</label><input id="setup-name" placeholder="管理者の名前" style="margin-bottom:8px"></div>
+    <div class="fg"><label class="lbl">PIN (4桁)</label><input id="setup-pin" type="password" maxlength="4" placeholder="0000"></div>
+    <button class="btn bp" style="width:100%;margin-top:8px" onclick="doFirstSetup()">管理者を作成して開始</button>
+    <div class="cancel-t" style="margin-top:10px" onclick="renderLoginGrid()">戻る</div>
+  </div>`;
+}
+function doFirstSetup(){
+  const n=document.getElementById('setup-name').value.trim();
+  const p=document.getElementById('setup-pin').value;
+  if(!n){toast('名前を入力してください',false);return;}
+  if(p&&p.length!==4){toast('PINは4桁で入力してください',false);return;}
+  S.members.push({id:Date.now(),name:n,role:'管理者',perm:'admin',pin:p||''});
+  save();renderLoginGrid();toast('管理者を作成しました');
+}
+function quickAdminSetup(){
+  S.members.push({id:Date.now(),name:'管理者',role:'管理者',perm:'admin',pin:'0000'});
+  save();renderLoginGrid();toast('管理者 (PIN:0000) を作成しました');
+}
+function doLogout(){
+  op=null;saleCart=[];grpCart=[];selCraftId=null;stkEdits={};stkCat=null;matEdits={};matCat=null;
+  sessSave(null);
+  document.getElementById('login-ov').classList.remove('hidden');
+  document.getElementById('op-chip').style.display='none';
+  document.getElementById('sidebar').style.display='none';
+  document.getElementById('lo-user').style.display='block';
+  document.getElementById('lo-pin').style.display='none';
+  renderLoginGrid();
+}
+
+// ═══════════════════════════════
+//  SIDEBAR & NAVIGATION
+// ═══════════════════════════════
+function renderSidebar(){
+  ['sale','craft','grp','stock','buymat','matmgmt','admin'].forEach(id=>{
+    const el=document.getElementById('si-'+id);
+    if(!el)return;
+    if(canDo(id))el.classList.remove('disabled');
+    else el.classList.add('disabled');
+  });
+}
+function goSc(id,el){
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.sitem').forEach(s=>s.classList.remove('on'));
+  const sc=document.getElementById('sc-'+id);
+  if(sc)sc.classList.add('on');
+  if(el)el.classList.add('on');
+  // Initialize screen
+  if(id==='sale')renderSale();
+  if(id==='craft')openCraft();
+  if(id==='grp')renderGrpHist();
+  if(id==='stock')openStock();
+  if(id==='buymat')openBuymatScreen();
+  if(id==='matmgmt')openMatMgmt();
+  if(id==='admin')renderAdmOv();
+}
+
+// ═══════════════════════════════
+//  SALE
+// ═══════════════════════════════
+function renderSale(){saleCart=[];saleCat='all';renderSalePage();}
+function renderSalePage(){
+  const cats=['all',...new Set(S.products.map(p=>p.category).filter(Boolean))];
+  document.getElementById('sale-cats').innerHTML=cats.map(c=>`<div class="ct ${saleCat===c?'on':''}" onclick="saleCat='${c}';renderSalePage()">${c==='all'?'ALL':c}</div>`).join('');
+  const prods=saleCat==='all'?S.products:S.products.filter(p=>p.category===saleCat);
+  document.getElementById('sale-grid').innerHTML=prods.length?prods.map(p=>`<div class="pcard ${p.qty<=0?'dis':''}" onclick="addSaleCart(${p.id})">
+    <div class="pc-name">${p.name}</div><div class="pc-cat">${p.category||'—'}</div>
+    <div class="pc-price">¥${p.price.toLocaleString()}</div><div class="pc-stock">在庫:${p.qty}</div>
+  </div>`).join(''):`<div class="empty" style="grid-column:1/-1">商品がありません</div>`;
+  renderSaleCart();
+}
+function addSaleCart(id){const p=S.products.find(x=>x.id===id);if(!p||p.qty<=0)return;const ex=saleCart.find(c=>c.id===id);if(ex){if(ex.qty<p.qty)ex.qty++;else{toast('在庫上限です',false);return;}}else saleCart.push({id:p.id,name:p.name,price:p.price,qty:1,max:p.qty});renderSaleCart();}
+function renderSaleCart(){
+  const cb=document.getElementById('sale-cart-body'),cx=document.getElementById('sale-calc');
+  if(!saleCart.length){cb.innerHTML='<div class="empty">商品を選んで追加</div>';cx.style.display='none';renderSaleSummary();return;}
+  cb.innerHTML=saleCart.map((c,i)=>`<div class="ci"><span class="ci-name">${c.name}</span>
+    <input class="ci-qty" type="number" min="1" max="${c.max}" value="${c.qty}" onchange="saleCart[${i}].qty=Math.min(Math.max(1,+this.value||1),${c.max});renderSaleCart()">
+    <span style="font-size:10px;color:var(--tx3)">×¥${c.price.toLocaleString()}</span>
+    <span class="ci-sub">¥${(c.price*c.qty).toLocaleString()}</span>
+    <button class="btn bs bd-btn" onclick="saleCart.splice(${i},1);renderSaleCart()">×</button>
+  </div>`).join('');
+  const sub=saleCart.reduce((s,c)=>s+c.price*c.qty,0),tq=saleCart.reduce((s,c)=>s+c.qty,0);
+  cx.style.display='block';
+  cx.innerHTML=saleCart.map(c=>`<div class="calc-row"><span>${c.name} ×${c.qty}</span><span>¥${(c.price*c.qty).toLocaleString()}</span></div>`).join('')+`<div class="calc-total"><span>合計 (${tq}点)</span><span>¥${sub.toLocaleString()}</span></div>`;
+  renderSaleSummary();
+}
+function renderSaleSummary(){const el=document.getElementById('sale-summary');if(!saleCart.length){el.innerHTML='<div class="empty">カートに追加すると表示されます</div>';return;}const sub=saleCart.reduce((s,c)=>s+c.price*c.qty,0),tq=saleCart.reduce((s,c)=>s+c.qty,0);el.innerHTML=`<div style="margin-bottom:10px"><div class="lbl" style="display:block;margin-bottom:3px">担当者</div><div style="font-size:14px;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--or)">${op?.name}</div></div>${saleCart.map(c=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:12px;color:var(--tx2)"><span>${c.name} ×${c.qty}</span><span>¥${(c.price*c.qty).toLocaleString()}</span></div>`).join('')}<div class="calc-total" style="margin-top:10px;padding-top:10px"><span>合計 (${tq}点)</span><span>¥${sub.toLocaleString()}</span></div>`;}
+async function submitSale(){if(!saleCart.length){toast('カートが空です',false);return;}saleCart.forEach(c=>{const p=S.products.find(x=>x.id===c.id);if(p)p.qty=Math.max(0,p.qty-c.qty);});const sub=saleCart.reduce((s,c)=>s+c.price*c.qty,0);const items=saleCart.map(c=>`${c.name}×${c.qty}`).join(', ');const note=document.getElementById('sale-note').value;addLog('SALE',`販売: ${items} ¥${sub.toLocaleString()}${note?' ('+note+')':''}`,op?.name);saleCart=[];document.getElementById('sale-note').value='';toast('販売を記録しました');renderSale();}
+
+// ═══════════════════════════════
+//  CRAFT
+// ═══════════════════════════════
+function openCraft(){
+  selCraftId=null;
+  document.getElementById('craft-qty-wrap').style.display='none';
+  document.getElementById('craft-preview').innerHTML='<div class="empty">商品を選択してください</div>';
+  renderCraftList();
+}
+function renderCraftList(){
+  const craftable=S.products.filter(p=>p.recipe&&p.recipe.length>0);
+  const el=document.getElementById('craft-list');
+  if(!craftable.length){el.innerHTML='<div class="empty">レシピが設定された商品がありません<br>管理→レシピ で設定してください</div>';return;}
+  el.innerHTML=craftable.map(p=>{
+    const mn=(p.recipe||[]).map(r=>{const m=S.materials.find(x=>x.id===r.matId);return m?`${m.name}×${r.amount}`:null;}).filter(Boolean).join('、');
+    const sel=selCraftId===p.id;
+    return`<div class="craft-card ${sel?'sel':''}" onclick="selectCraft(${p.id})">
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500">${p.name}</div>
+        <div style="font-size:11px;color:var(--tx2);margin-top:3px"><span style="background:rgba(56,138,221,.2);color:#5898dd;padding:1px 5px;border-radius:3px;font-size:9px;font-family:'Rajdhani',sans-serif">RECIPE</span> ${mn||'素材未設定'}</div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:2px">在庫: ${p.qty}個</div>
+      </div>
+      <div style="color:${sel?'var(--or)':'var(--tx3)'};font-size:12px">✓</div>
+    </div>`;
+  }).join('');
+}
+function selectCraft(id){
+  selCraftId=id;renderCraftList();
+  const prod=S.products.find(p=>p.id===id);if(!prod)return;
+  document.getElementById('craft-qty-wrap').style.display='block';
+  document.getElementById('craft-sel-name').textContent=`「${prod.name}」の制作数`;
+  document.getElementById('craft-qty').value=1;
+  renderCraftPreview();
+}
+function renderCraftPreview(){
+  const prod=S.products.find(p=>p.id===selCraftId);if(!prod)return;
+  const qty=parseInt(document.getElementById('craft-qty').value)||1;
+  const el=document.getElementById('craft-preview');
+  const btn=document.getElementById('craft-btn');
+  let mx=999999;
+  (prod.recipe||[]).forEach(r=>{const m=S.materials.find(x=>x.id===r.matId);if(m&&r.amount>0)mx=Math.min(mx,Math.floor(m.qty/r.amount));});
+  if(mx===999999||!prod.recipe||!prod.recipe.length)mx=0;
+  document.getElementById('craft-max').textContent=`(最大 ${mx} 個)`;
+  const ok=qty>0&&qty<=mx&&prod.recipe&&prod.recipe.length>0;
+  btn.className=`btn ${ok?'bp':''}`;btn.disabled=!ok;
+  if(!prod.recipe||!prod.recipe.length){el.innerHTML='<div class="empty">レシピが設定されていません</div>';return;}
+  const matRows=(prod.recipe||[]).map(r=>{
+    const m=S.materials.find(x=>x.id===r.matId);
+    if(!m)return`<div class="mrow"><span style="color:var(--ng)">素材が見つかりません(ID:${r.matId})</span></div>`;
+    const need=r.amount*qty;const pct=Math.min(100,Math.round(m.qty/Math.max(need,.001)*100));const mok=m.qty>=need;
+    return`<div class="mrow"><div><span style="font-weight:500">${m.name}</span><span style="color:var(--tx3);font-size:10px;margin-left:5px">在庫:${m.qty}${m.unit||'個'}</span></div>
+    <div style="display:flex;align-items:center;gap:4px"><span style="color:${mok?'var(--ok)':'var(--ng)'};font-weight:${mok?400:600}">${need}${m.unit||'個'}必要</span><div class="mbarw"><div class="mbar" style="width:${pct}%;background:${mok?'var(--ok)':'var(--ng)'}"></div></div><span style="font-size:10px;color:${mok?'var(--ok)':'var(--ng)'}">${mok?'OK':'不足'}</span></div></div>`;
+  }).join('');
+  el.innerHTML=`<div style="margin-bottom:10px"><div style="font-size:11px;color:var(--tx2);margin-bottom:6px">必要素材 (×${qty}個制作)</div>${matRows}</div>
+  <div class="rbox"><div style="font-size:11px;font-weight:600;color:var(--ok);margin-bottom:5px;font-family:'Rajdhani',sans-serif">制作後の変化</div>
+  <div class="rrow"><span style="color:var(--tx2)">「${prod.name}」</span><span style="color:var(--ok);font-weight:600">+${qty}個 → ${prod.qty+qty}個</span></div>
+  ${(prod.recipe||[]).map(r=>{const m=S.materials.find(x=>x.id===r.matId);if(!m)return'';const n=r.amount*qty;return`<div class="rrow"><span style="color:var(--tx2)">「${m.name}」</span><span style="color:var(--ng);font-weight:500">-${n}${m.unit||'個'} → ${Math.max(0,m.qty-n)}${m.unit||'個'}</span></div>`;}).join('')}
+  </div><div style="margin-top:8px;font-size:11px;color:var(--tx3)">担当者: ${op?.name}</div>`;
+}
+async function submitCraft(){
+  const prod=S.products.find(p=>p.id===selCraftId);const qty=parseInt(document.getElementById('craft-qty').value)||0;
+  if(!prod||qty<=0){toast('商品と制作数を入力してください',false);return;}
+  let ok=true;(prod.recipe||[]).forEach(r=>{const m=S.materials.find(x=>x.id===r.matId);if(!m||m.qty<r.amount*qty)ok=false;});
+  if(!ok){toast('素材が不足しています',false);return;}
+  (prod.recipe||[]).forEach(r=>{const m=S.materials.find(x=>x.id===r.matId);if(m)m.qty=Math.max(0,m.qty-r.amount*qty);});
+  prod.qty+=qty;
+  const note=document.getElementById('craft-note').value;
+  const ml=(prod.recipe||[]).map(r=>{const m=S.materials.find(x=>x.id===r.matId);return m?`${m.name}-${r.amount*qty}${m.unit||'個'}`:null;}).filter(Boolean).join(', ');
+  addLog('CRAFT',`クラフト: ${prod.name} +${qty}個 / 消費[${ml}]${note?' ('+note+')':''}`,op?.name);
+  selCraftId=null;document.getElementById('craft-note').value='';
+  toast(`「${prod.name}」を${qty}個制作しました`);
+  openCraft();
+}
+
+// ═══════════════════════════════
+//  GROUP SALES
+// ═══════════════════════════════
+function goGrpTab(id,el){
+  ['gt-hist','gt-new','gt-orgs'].forEach(t=>{const x=document.getElementById(t);if(x){x.style.display='none';x.classList.remove('on');}});
+  document.getElementById(id).style.display='block';
+  document.querySelectorAll('#sc-grp .anav .anb').forEach(b=>b.classList.remove('on'));
+  if(el)el.classList.add('on');
+  if(id==='gt-hist')renderGrpHist();
+  if(id==='gt-new')renderGrpNew();
+  if(id==='gt-orgs')renderGrpOrgs();
+}
+function renderGrpHist(){
+  const f=document.getElementById('grp-hf').value;
+  const list=f?S.reservations.filter(r=>r.status===f):S.reservations;
+  const el=document.getElementById('grp-hist-list');
+  if(!list.length){el.innerHTML='<div class="empty">予約がありません</div>';return;}
+  el.innerHTML=[...list].sort((a,b)=>b.id-a.id).map(r=>`<div class="rescard">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div><div style="font-size:13px;font-weight:600;font-family:'Rajdhani',sans-serif;letter-spacing:.5px">${r.orgName} <span style="font-size:11px;font-weight:400;color:var(--tx2)">/ ${r.memberName}</span></div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:2px">予約: ${r.createdAt} · 担当: ${r.createdBy}${r.completedAt?' · 受渡: '+r.completedAt:''}${r.note?' · '+r.note:''}</div></div>
+      <span class="badge ${r.status==='pending'?'b-pend':'b-done'}">${r.status==='pending'?'予約中':'受渡完了'}</span>
+    </div>
+    <div style="font-size:12px;color:var(--tx2);margin-bottom:8px">${r.items.map(i=>`${i.productName} ×${i.qty}`).join('、')}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--or)">合計: ¥${r.items.reduce((s,i)=>s+i.price*i.qty,0).toLocaleString()}</span>
+      ${r.status==='pending'?`<button class="btn bp bs" onclick="completeReservation(${r.id})">受け渡し完了</button>`:'<span style="font-size:11px;color:var(--tx3)">受渡済</span>'}
+    </div>
+  </div>`).join('');
+}
+function renderGrpNew(){
+  grpCart=[];grpCat='all';
+  const os=document.getElementById('grp-org-sel');
+  os.innerHTML='<option value="">-- 団体を選択 --</option>'+S.orgs.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+  document.getElementById('grp-member').value='';document.getElementById('grp-note').value='';
+  renderGrpProdGrid();renderGrpCart();
+}
+function renderGrpProdGrid(){
+  const cats=['all',...new Set(S.products.map(p=>p.category).filter(Boolean))];
+  document.getElementById('grp-cats').innerHTML=cats.map(c=>`<div class="ct ${grpCat===c?'on':''}" onclick="grpCat='${c}';renderGrpProdGrid()">${c==='all'?'ALL':c}</div>`).join('');
+  const prods=grpCat==='all'?S.products:S.products.filter(p=>p.category===grpCat);
+  document.getElementById('grp-grid').innerHTML=prods.length?prods.map(p=>`<div class="pcard" onclick="addGrpCart(${p.id})">
+    <div class="pc-name">${p.name}</div><div class="pc-cat">${p.category||'—'}</div>
+    <div class="pc-price">¥${p.price.toLocaleString()}</div><div class="pc-stock">在庫:${p.qty}</div>
+  </div>`).join(''):`<div class="empty" style="grid-column:1/-1">商品がありません</div>`;
+}
+function addGrpCart(id){const p=S.products.find(x=>x.id===id);if(!p)return;const ex=grpCart.find(c=>c.id===id);if(ex)ex.qty++;else grpCart.push({id:p.id,name:p.name,price:p.price,qty:1});renderGrpCart();}
+function renderGrpCart(){
+  const cb=document.getElementById('grp-cart-body'),cx=document.getElementById('grp-calc');
+  if(!grpCart.length){cb.innerHTML='<div class="empty">商品を選んで追加</div>';cx.style.display='none';renderGrpSummary();return;}
+  cb.innerHTML=grpCart.map((c,i)=>`<div class="ci"><span class="ci-name">${c.name}</span>
+    <input class="ci-qty" type="number" min="1" value="${c.qty}" onchange="grpCart[${i}].qty=Math.max(1,+this.value||1);renderGrpCart()">
+    <span style="font-size:10px;color:var(--tx3)">×¥${c.price.toLocaleString()}</span>
+    <span class="ci-sub">¥${(c.price*c.qty).toLocaleString()}</span>
+    <button class="btn bs bd-btn" onclick="grpCart.splice(${i},1);renderGrpCart()">×</button>
+  </div>`).join('');
+  const sub=grpCart.reduce((s,c)=>s+c.price*c.qty,0),tq=grpCart.reduce((s,c)=>s+c.qty,0);
+  cx.style.display='block';
+  cx.innerHTML=grpCart.map(c=>`<div class="calc-row"><span>${c.name} ×${c.qty}</span><span>¥${(c.price*c.qty).toLocaleString()}</span></div>`).join('')+`<div class="calc-total"><span>合計 (${tq}点)</span><span>¥${sub.toLocaleString()}</span></div>`;
+  renderGrpSummary();
+}
+function renderGrpSummary(){
+  const org=S.orgs.find(o=>o.id==document.getElementById('grp-org-sel')?.value);
+  const member=document.getElementById('grp-member')?.value||'—';
+  const el=document.getElementById('grp-summary');
+  if(!grpCart.length){el.innerHTML='<div class="empty">入力すると表示されます</div>';return;}
+  const sub=grpCart.reduce((s,c)=>s+c.price*c.qty,0),tq=grpCart.reduce((s,c)=>s+c.qty,0);
+  el.innerHTML=`<div style="margin-bottom:8px"><div class="lbl" style="display:block;margin-bottom:2px">団体</div><div style="font-size:13px;font-weight:700;font-family:'Rajdhani',sans-serif;color:var(--or)">${org?org.name:'未選択'}</div></div>
+  <div style="margin-bottom:8px"><div class="lbl" style="display:block;margin-bottom:2px">メンバー名</div><div style="font-size:13px;font-weight:500">${member}</div></div>
+  ${grpCart.map(c=>`<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12px;color:var(--tx2)"><span>${c.name} ×${c.qty}</span><span>¥${(c.price*c.qty).toLocaleString()}</span></div>`).join('')}
+  <div class="calc-total" style="margin-top:8px;padding-top:8px"><span>合計 (${tq}点)</span><span>¥${sub.toLocaleString()}</span></div>
+  <div style="margin-top:6px;font-size:11px;color:var(--tx3)">予約担当: ${op?.name}</div>`;
+}
+async function submitGrpReserve(){
+  const orgId=parseInt(document.getElementById('grp-org-sel').value);const org=S.orgs.find(o=>o.id===orgId);
+  const member=document.getElementById('grp-member').value.trim();const note=document.getElementById('grp-note').value;
+  if(!org){toast('団体を選択してください',false);return;}
+  if(!member){toast('メンバー名を入力してください',false);return;}
+  if(!grpCart.length){toast('商品を選択してください',false);return;}
+  const now=new Date().toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  S.reservations.push({id:Date.now(),orgId:org.id,orgName:org.name,memberName:member,
+    items:grpCart.map(c=>({productId:c.id,productName:c.name,qty:c.qty,price:c.price})),
+    status:'pending',createdAt:now,createdBy:op?.name,completedAt:null,note});
+  addLog('GRP',`団体予約: ${org.name} / ${member}`,op?.name);
+  grpCart=[];toast(`「${org.name}」の予約を作成しました`);
+  goGrpTab('gt-hist',document.querySelector('#sc-grp .anav .anb'));
+}
+function completeReservation(id){
+  const res=S.reservations.find(r=>r.id===id);if(!res||res.status==='completed')return;
+  const shorts=res.items.filter(i=>{const p=S.products.find(x=>x.id===i.productId);return p&&p.qty<i.qty;});
+  if(shorts.length){toast(`在庫不足: ${shorts.map(i=>i.productName).join('、')}`,false);return;}
+  res.items.forEach(i=>{const p=S.products.find(x=>x.id===i.productId);if(p)p.qty=Math.max(0,p.qty-i.qty);});
+  res.status='completed';
+  res.completedAt=new Date().toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  res.completedBy=op?.name;
+  addLog('GRP',`受け渡し完了: ${res.orgName} / ${res.memberName}`,op?.name);
+  renderGrpHist();toast('受け渡しを完了しました');
+}
+function renderGrpOrgs(){document.getElementById('grp-org-list').innerHTML=S.orgs.length?S.orgs.map((o,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:var(--bd2);font-size:12px"><div style="flex:1"><div style="font-weight:500">${o.name}</div><div style="font-size:10px;color:var(--tx3)">${o.memo||''}</div></div><button class="btn bs bd-btn" onclick="delOrg(${i})">削除</button></div>`).join(''):'<div class="empty">登録された団体がありません</div>';}
+function addOrg(){const n=document.getElementById('org-n').value.trim();if(!n){toast('団体名が必要です',false);return;}if(S.orgs.find(o=>o.name===n)){toast('既に登録されています',false);return;}S.orgs.push({id:Date.now(),name:n,memo:document.getElementById('org-m').value.trim()});addLog('ADMIN',`団体「${n}」追加`,op?.name);save();['org-n','org-m'].forEach(id=>document.getElementById(id).value='');renderGrpOrgs();toast(`「${n}」を追加しました`);}
+function delOrg(i){const n=S.orgs[i].name;if(!confirm(`「${n}」を削除しますか？`))return;S.orgs.splice(i,1);save();renderGrpOrgs();}
+
+// ═══════════════════════════════
+//  STOCK (商品 - カテゴリー選択)
+// ═══════════════════════════════
+function openStock(){
+  stkEdits={};stkCat=null;
+  document.getElementById('stk-cat-view').style.display='block';
+  document.getElementById('stk-item-view').style.display='none';
+  renderStkCatView();
+}
+function renderStkCatView(){
+  const cats=[...new Set(S.products.map(p=>p.category).filter(Boolean))];
+  document.getElementById('stk-cat-cards').innerHTML=cats.map(c=>{
+    const items=S.products.filter(p=>p.category===c);
+    const low=items.filter(p=>p.qty<=(p.threshold||3)).length;
+    return`<div class="ccard" onclick="openStkCat('${c}')">
+      <div class="ccard-name">${c}</div>
+      <div class="ccard-count">${items.length}種 / ${items.reduce((s,p)=>s+p.qty,0)}個</div>
+      ${low>0?`<div style="font-size:10px;color:var(--ng);margin-top:2px">要注意 ${low}件</div>`:''}
+    </div>`;
+  }).join('');
+  const total=S.products.reduce((s,p)=>s+p.qty,0),tv=S.products.reduce((s,p)=>s+p.qty*p.price,0);
+  document.getElementById('stk-all-info').textContent=`${S.products.length}種類 · 合計${total}個 · ¥${tv.toLocaleString()}相当`;
+  document.getElementById('stk-all-rows').innerHTML=S.products.length?S.products.map(p=>stkRow('prod',p)).join(''):`<div class="empty">商品がありません</div>`;
+}
+function openStkCat(cat){
+  stkCat=cat;stkEdits={};
+  document.getElementById('stk-cat-view').style.display='none';
+  document.getElementById('stk-item-view').style.display='block';
+  const items=S.products.filter(p=>p.category===cat);
+  const low=items.filter(p=>p.qty<=(p.threshold||3)).length;
+  const hdr=document.getElementById('stk-item-hdr');
+  hdr.style.background='rgba(29,158,117,.08)';hdr.style.borderColor='rgba(29,158,117,.3)';
+  hdr.innerHTML=`<div class="sicon" style="background:rgba(29,158,117,.2);color:var(--ok)">▣</div><div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--ok);letter-spacing:1px">${cat}</div>
+    <div style="font-size:11px;color:var(--tx2)">${items.length}種類${low>0?' · 要注意'+low+'件':''}</div>
+  </div>
+  <button class="btn bs" style="margin-left:auto" onclick="openStock()">← カテゴリー一覧</button>`;
+  document.getElementById('stk-item-rows').innerHTML=items.length?items.map(p=>stkRow('prod',p)).join(''):`<div class="empty">このカテゴリーに商品がありません</div>`;
+  updateStkCount('prod');
+}
+function stkRow(type,item){
+  const s=type==='prod'?sts(item):sts(item,5);
+  const thr=item.threshold||(type==='prod'?3:5);
+  const pct=Math.min(100,Math.round(item.qty/Math.max(thr*3,1)*100));
+  const unit=type==='prod'?'個':item.unit||'個';
+  return`<div class="stk-item" id="si-${type}-${item.id}">
+    <div>
+      <div style="font-size:13px;font-weight:500">${item.name}</div>
+      ${type==='prod'?`<div style="font-size:10px;color:var(--tx3);margin-top:1px">単価¥${item.price.toLocaleString()} · 閾値${thr}個</div>`:`<div style="font-size:10px;color:var(--tx3);margin-top:1px">${item.category||'—'} · 閾値${thr}${unit}</div>`}
+      <div class="sbarw" style="width:120px;margin-top:4px"><div class="sbar" style="width:${pct}%;background:${s.col}"></div></div>
+    </div>
+    <div><span class="badge ${s.c}">${s.l}</span></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <input class="sinp" type="number" min="0" value="${item.qty}" data-orig="${item.qty}" onchange="onStkChange('${type}',${item.id},this)">
+      <span style="font-size:11px;color:var(--tx2)">${unit}</span>
+    </div>
+  </div>`;
+}
+function onStkChange(type,id,el){
+  const key=`${type}_${id}`;const orig=parseInt(el.getAttribute('data-orig'));const val=parseInt(el.value)||0;
+  if(val!==orig)stkEdits[key]=val;else delete stkEdits[key];
+  document.getElementById(`si-${type}-${id}`)?.classList.toggle('changed',val!==orig);
+  updateStkCount(type);
+}
+function updateStkCount(type){
+  const n=Object.keys(stkEdits).filter(k=>k.startsWith(type)).length;
+  const cnt=document.getElementById(type==='prod'?'stk-cnt':'mat-cnt');
+  const btn=document.getElementById(type==='prod'?'stk-save-btn':'mat-save-btn');
+  if(cnt)cnt.textContent=n;
+  if(btn)btn.className=`btn ${n>0?'bp':''}`;
+}
+function saveStockEdits(type){
+  const changes=[];
+  Object.entries(stkEdits).filter(([k])=>k.startsWith(type)).forEach(([key,val])=>{
+    const id=parseInt(key.split('_')[1]);
+    const arr=type==='prod'?S.products:S.materials;
+    const item=arr.find(x=>x.id===id);
+    if(item){changes.push(`${item.name}: ${item.qty}→${val}`);item.qty=Math.max(0,val);}
+  });
+  if(!changes.length){toast('変更はありません');return;}
+  addLog('STK',`在庫修正(${type==='prod'?'商品':'素材'}): ${changes.join(' / ')}`,op?.name);
+  Object.keys(stkEdits).filter(k=>k.startsWith(type)).forEach(k=>delete stkEdits[k]);
+  if(type==='prod'){if(stkCat)openStkCat(stkCat);else openStock();}
+  else{if(matCat)openMatCat(matCat);else openMatMgmt();}
+  toast(`${changes.length}件更新しました`);
+}
+
+// ═══════════════════════════════
+//  MATERIAL MGMT
+// ═══════════════════════════════
+function openMatMgmt(){
+  matEdits={};matCat=null;
+  document.getElementById('mat-cat-view').style.display='block';
+  document.getElementById('mat-item-view').style.display='none';
+  renderMatCatView();
+}
+function renderMatCatView(){
+  const cats=[...new Set(S.materials.map(m=>m.category).filter(Boolean))];
+  document.getElementById('mat-cat-cards').innerHTML=cats.map(c=>{
+    const items=S.materials.filter(m=>m.category===c);
+    const low=items.filter(m=>m.qty<=(m.threshold||5)).length;
+    return`<div class="ccard" onclick="openMatCat('${c}')">
+      <div class="ccard-name">${c}</div>
+      <div class="ccard-count">${items.length}種</div>
+      ${low>0?`<div style="font-size:10px;color:var(--ng);margin-top:2px">要注意 ${low}件</div>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('mat-all-info').textContent=`${S.materials.length}種類`;
+  document.getElementById('mat-all-rows').innerHTML=S.materials.length?S.materials.map(m=>stkRow('mat',m)).join(''):`<div class="empty">素材がありません</div>`;
+}
+function openMatCat(cat){
+  matCat=cat;matEdits={};
+  document.getElementById('mat-cat-view').style.display='none';
+  document.getElementById('mat-item-view').style.display='block';
+  const items=S.materials.filter(m=>m.category===cat);
+  const low=items.filter(m=>m.qty<=(m.threshold||5)).length;
+  const hdr=document.getElementById('mat-item-hdr');
+  hdr.style.background='rgba(224,124,16,.08)';hdr.style.borderColor='rgba(224,124,16,.3)';
+  hdr.innerHTML=`<div class="sicon" style="background:rgba(224,124,16,.2);color:var(--or)">◆</div><div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;color:var(--or);letter-spacing:1px">${cat}</div>
+    <div style="font-size:11px;color:var(--tx2)">${items.length}種類${low>0?' · 要注意'+low+'件':''}</div>
+  </div>
+  <button class="btn bs" style="margin-left:auto" onclick="openMatMgmt()">← カテゴリー一覧</button>`;
+  document.getElementById('mat-item-rows').innerHTML=items.length?items.map(m=>stkRow('mat',m)).join(''):`<div class="empty">このカテゴリーに素材がありません</div>`;
+  updateStkCount('mat');
+}
+
+// ═══════════════════════════════
+//  ADMIN
+// ═══════════════════════════════
+function renderAdmOv(){
+  const tv=S.products.reduce((s,p)=>s+p.qty*p.price,0);
+  const lp=S.products.filter(p=>p.qty<=(p.threshold||3)).length;
+  const lm=S.materials.filter(m=>m.qty<=(m.threshold||5)).length;
+  document.getElementById('adm-metrics').innerHTML=`
+    <div class="met"><div class="met-l">商品種数</div><div class="met-v">${S.products.length}</div></div>
+    <div class="met"><div class="met-l">素材種数</div><div class="met-v">${S.materials.length}</div></div>
+    <div class="met"><div class="met-l">在庫総額</div><div class="met-v" style="font-size:16px">¥${tv.toLocaleString()}</div></div>
+    <div class="met"><div class="met-l">要注意</div><div class="met-v" style="color:${lp+lm>0?'var(--ng)':'var(--tx)'}">${lp+lm}</div><div class="met-s">商品${lp}/素材${lm}</div></div>`;
+  const al=[...S.products.filter(p=>p.qty<=(p.threshold||3)),...S.materials.filter(m=>m.qty<=(m.threshold||5))];
+  document.getElementById('adm-alerts').innerHTML=al.length?`<div class="alertbar">⚠ 在庫不足: ${al.map(x=>x.name).join('、')}</div>`:'';
+  document.getElementById('ov-prod').innerHTML=S.products.length?S.products.map(p=>{const s=sts(p);return`<tr><td style="font-weight:500">${p.name}</td><td style="color:var(--tx2)">${p.category||'—'}</td><td>${p.qty}</td><td><span class="badge ${s.c}">${s.l}</span></td></tr>`}).join(''):`<tr><td colspan="4"><div class="empty">なし</div></td></tr>`;
+  document.getElementById('ov-mat').innerHTML=S.materials.length?S.materials.map(m=>{const s=sts(m);return`<tr><td style="font-weight:500">${m.name}</td><td>${m.qty}</td><td style="color:var(--tx2)">${m.unit||'個'}</td><td><span class="badge ${s.c}">${s.l}</span></td></tr>`}).join(''):`<tr><td colspan="4"><div class="empty">なし</div></td></tr>`;
+}
+function goAdmTab(id,el){
+  ['adm-ov','adm-prod','adm-mat','adm-recipe','adm-perm','adm-mem','adm-log','adm-gs','adm-misc'].forEach(t=>{
+    const x=document.getElementById(t);if(x){x.style.display='none';x.classList.remove('on');}
+  });
+  document.getElementById(id).style.display='block';
+  document.querySelectorAll('#sc-admin .anav .anb').forEach(b=>b.classList.remove('on'));
+  if(el)el.classList.add('on');
+  if(id==='adm-ov')renderAdmOv();
+  if(id==='adm-prod')renderAdmProds();
+  if(id==='adm-mat')renderAdmMats();
+  if(id==='adm-recipe')renderRecipeTab();
+  if(id==='adm-perm')renderPermTable();
+  if(id==='adm-mem')renderAdmMembers();
+  if(id==='adm-log')renderLogs();
+  if(id==='adm-gs')renderGsTab();
+}
+/* 商品 */
+function renderAdmProds(){document.getElementById('adm-prod-tb').innerHTML=S.products.length?S.products.map((p,i)=>{const s=sts(p);return`<tr>
+  <td><input value="${p.name}" style="width:135px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" onchange="S.products[${i}].name=this.value;save()"></td>
+  <td><input value="${p.category||''}" style="width:80px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" onchange="S.products[${i}].category=this.value;save()"></td>
+  <td><input type="number" value="${p.qty}" style="width:55px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" min="0" onchange="chgPQ(${i},this.value)"></td>
+  <td><input type="number" value="${p.price}" style="width:72px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" min="0" onchange="S.products[${i}].price=+this.value;save()"></td>
+  <td><input type="number" value="${p.threshold||3}" style="width:50px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" min="0" onchange="S.products[${i}].threshold=+this.value;save()"></td>
+  <td><span class="badge ${s.c}">${s.l}</span></td>
+  <td><button class="btn bs bd-btn" onclick="delProd(${i})">削除</button></td>
+</tr>`}).join(''):`<tr><td colspan="7"><div class="empty">なし</div></td></tr>`;}
+function chgPQ(i,v){addLog('ADMIN',`商品「${S.products[i].name}」在庫変更 ${S.products[i].qty}→${+v}`,op?.name);S.products[i].qty=Math.max(0,+v);save();}
+function addProd(){const n=document.getElementById('ap-n').value.trim();if(!n){toast('商品名が必要です',false);return;}S.products.push({id:Date.now(),name:n,category:document.getElementById('ap-c').value.trim(),qty:parseInt(document.getElementById('ap-q').value)||0,price:parseInt(document.getElementById('ap-p').value)||0,threshold:parseInt(document.getElementById('ap-t').value)||3,recipe:[]});addLog('ADMIN',`商品「${n}」追加`,op?.name);['ap-n','ap-c','ap-q','ap-p','ap-t'].forEach(id=>document.getElementById(id).value='');renderAdmProds();toast(`「${n}」を追加しました`);}
+function delProd(i){const n=S.products[i].name;S.products.splice(i,1);addLog('ADMIN',`商品「${n}」削除`,op?.name);save();renderAdmProds();}
+/* 素材 */
+function renderAdmMats(){document.getElementById('adm-mat-tb').innerHTML=S.materials.length?S.materials.map((m,i)=>{const s=sts(m);return`<tr>
+  <td><input value="${m.name}" style="width:135px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" onchange="S.materials[${i}].name=this.value;save()"></td>
+  <td><input value="${m.category||''}" style="width:80px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" onchange="S.materials[${i}].category=this.value;save()"></td>
+  <td><input type="number" value="${m.qty}" style="width:55px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" min="0" onchange="chgMQ(${i},this.value)"></td>
+  <td><input value="${m.unit||''}" style="width:40px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" onchange="S.materials[${i}].unit=this.value;save()"></td>
+  <td><input type="number" value="${m.threshold||5}" style="width:50px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" min="0" onchange="S.materials[${i}].threshold=+this.value;save()"></td>
+  <td><span class="badge ${s.c}">${s.l}</span></td>
+  <td><button class="btn bs bd-btn" onclick="delMat(${i})">削除</button></td>
+</tr>`}).join(''):`<tr><td colspan="7"><div class="empty">なし</div></td></tr>`;}
+function chgMQ(i,v){addLog('ADMIN',`素材「${S.materials[i].name}」在庫変更 ${S.materials[i].qty}→${+v}`,op?.name);S.materials[i].qty=Math.max(0,+v);save();}
+function addMat(){const n=document.getElementById('am-n').value.trim();if(!n){toast('素材名が必要です',false);return;}S.materials.push({id:Date.now(),name:n,category:document.getElementById('am-c').value.trim(),qty:parseInt(document.getElementById('am-q').value)||0,unit:document.getElementById('am-u').value.trim()||'個',threshold:parseInt(document.getElementById('am-t').value)||5,buyPrice:parseInt(document.getElementById('am-bp').value)||0});addLog('ADMIN',`素材「${n}」追加`,op?.name);['am-n','am-c','am-q','am-u','am-t','am-bp'].forEach(id=>document.getElementById(id).value='');renderAdmMats();toast(`「${n}」を追加しました`);}
+function delMat(i){const n=S.materials[i].name;S.materials.splice(i,1);addLog('ADMIN',`素材「${n}」削除`,op?.name);save();renderAdmMats();}
+/* 素材買い取り (独立メニュー) */
+let selBmMatId = null;
+function openBuymatScreen(){
+  selBmMatId=null;
+  document.getElementById('bm-detail-wrap').style.display='none';
+  document.getElementById('bm-new-summary').innerHTML='<div class="empty">素材を選択してください</div>';
+  renderBmProdGrid();
+}
+function renderBmProdGrid(){
+  const el=document.getElementById('bm-prod-grid');
+  if(!S.materials.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">素材が登録されていません<br>管理→素材 で登録してください</div>';return;}
+  el.innerHTML=S.materials.map(m=>{
+    const sel=selBmMatId===m.id;
+    const bp=m.buyPrice||0;
+    return '<div class="pcard' + (sel ? '" style="border-color:var(--or);background:rgba(224,124,16,.08)"' : '"') + ' onclick="selectBmMat(' + m.id + ')">' +
+      '<div class="pc-name">' + m.name + '</div>' +
+      '<div class="pc-cat">' + (m.category||'—') + '</div>' +
+      '<div class="pc-price">¥' + bp.toLocaleString() + ' / ' + (m.unit||'個') + '</div>' +
+      '<div class="pc-stock">在庫: ' + m.qty + (m.unit||'個') + '</div></div>';
+  }).join('');
+}
+function selectBmMat(id){
+  selBmMatId=id;
+  const mat=S.materials.find(m=>m.id===id);if(!mat)return;
+  renderBmProdGrid();
+  document.getElementById('bm-detail-wrap').style.display='block';
+  document.getElementById('bm-detail-title').textContent='「' + mat.name + '」の買い取り数量';
+  document.getElementById('bm-unit-label').textContent=mat.unit||'個';
+  document.getElementById('bm-new-qty').value=1;
+  renderBmDetail();
+}
+function renderBmDetail(){
+  const mat=S.materials.find(m=>m.id===selBmMatId);if(!mat)return;
+  const qty=parseInt(document.getElementById('bm-new-qty').value)||0;
+  const price=mat.buyPrice||0;
+  const total=qty*price;
+  const el=document.getElementById('bm-new-summary');
+  if(qty<=0){el.innerHTML='<div class="empty">数量を入力してください</div>';return;}
+  el.innerHTML='<div style="margin-bottom:12px"><div class="lbl" style="display:block;margin-bottom:3px">素材</div>' +
+    '<div style="font-size:15px;font-weight:700;font-family:Rajdhani,sans-serif;color:var(--or)">' + mat.name + '</div>' +
+    '<div style="font-size:11px;color:var(--tx3);margin-top:2px">' + (mat.category||'—') + '</div></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--tx2)"><span>買取単価</span><span style="color:var(--tx)">¥' + price.toLocaleString() + ' / ' + (mat.unit||'個') + '</span></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--tx2)"><span>買い取り数</span><span style="color:var(--tx)">' + qty + ' ' + (mat.unit||'個') + '</span></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--tx2)"><span>現在の在庫</span><span>' + mat.qty + (mat.unit||'個') + '</span></div>' +
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--tx2)"><span>取得後の在庫</span><span style="color:var(--ok);font-weight:600">' + (mat.qty+qty) + (mat.unit||'個') + '</span></div>' +
+    '<div class="calc-total" style="margin-top:8px;padding-top:8px"><span>仕入れ合計</span><span>¥' + total.toLocaleString() + '</span></div>' +
+    '<div style="margin-top:8px;font-size:11px;color:var(--tx3)">担当者: ' + (op?.name||'—') + '</div>';
+}
+async function submitBuyMatNew(){
+  const mat=S.materials.find(m=>m.id===selBmMatId);
+  const qty=parseInt(document.getElementById('bm-new-qty').value)||0;
+  const note=document.getElementById('bm-new-note').value;
+  if(!mat||qty<=0){toast('素材と数量を入力してください',false);return;}
+  const price=mat.buyPrice||0;
+  mat.qty+=qty;
+  addLog('BUY','素材買い取り: ' + mat.name + ' +' + qty + (mat.unit||'個') + ' @¥' + price.toLocaleString() + ' 合計¥' + (qty*price).toLocaleString() + (note?' ('+note+')':''),op?.name);
+  toast('「' + mat.name + '」' + qty + (mat.unit||'個') + 'を買い取りました');
+  selBmMatId=null;
+  document.getElementById('bm-new-qty').value=1;
+  document.getElementById('bm-new-note').value='';
+  openBuymatScreen();
+}
+
+/* レシピ */
+function renderRecipeTab(){const sel=document.getElementById('recipe-prod-sel');sel.innerHTML='<option value="">-- 商品を選択 --</option>'+S.products.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');document.getElementById('recipe-add-mat').innerHTML='<option value="">-- 素材 --</option>'+S.materials.map(m=>`<option value="${m.id}">${m.name} (${m.unit||'個'})</option>`).join('');renderRecipeEditor();}
+function renderRecipeEditor(){const pid=parseInt(document.getElementById('recipe-prod-sel').value);const prod=S.products.find(p=>p.id===pid);document.getElementById('recipe-editor').style.display=prod?'block':'none';if(!prod)return;document.getElementById('recipe-ed-title').textContent=`「${prod.name}」のレシピ`;const lines=document.getElementById('recipe-lines');if(!prod.recipe||!prod.recipe.length){lines.innerHTML='<div class="empty" style="padding:12px">素材がまだ設定されていません</div>';return;}lines.innerHTML=prod.recipe.map((r,i)=>{const m=S.materials.find(x=>x.id===r.matId);return`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:var(--bd2)"><span style="flex:1;font-size:12px;font-weight:500">${m?m.name:'不明'}</span><span style="font-size:11px;color:var(--tx2)">1個あたり</span><input type="number" value="${r.amount}" min="0.1" step="0.1" style="width:68px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:4px;color:var(--tx);padding:3px 6px" onchange="updateRL(${pid},${i},this.value)"><span style="font-size:11px;color:var(--tx2)">${m?m.unit||'個':'個'}</span><button class="btn bs bd-btn" onclick="removeRL(${pid},${i})">×</button></div>`;}).join('');}
+function updateRL(pid,i,v){const p=S.products.find(x=>x.id===pid);if(p&&p.recipe[i])p.recipe[i].amount=parseFloat(v)||1;save();}
+function addRecipeLine(){const pid=parseInt(document.getElementById('recipe-prod-sel').value);const mid=parseInt(document.getElementById('recipe-add-mat').value);const amt=parseFloat(document.getElementById('recipe-add-amt').value)||1;const prod=S.products.find(p=>p.id===pid);if(!prod||!mid){toast('商品と素材を選んでください',false);return;}if(!prod.recipe)prod.recipe=[];if(prod.recipe.find(r=>r.matId===mid)){toast('既に追加済みです',false);return;}prod.recipe.push({matId:mid,amount:amt});addLog('ADMIN',`レシピ更新: ${prod.name}`,op?.name);save();document.getElementById('recipe-add-mat').value='';document.getElementById('recipe-add-amt').value='';renderRecipeEditor();toast('素材を追加しました');}
+function removeRL(pid,i){const p=S.products.find(x=>x.id===pid);if(p&&p.recipe)p.recipe.splice(i,1);save();renderRecipeEditor();}
+/* 権限設定 */
+function renderPermTable(){
+  const cfg=permCfg();const roles=['staff','chief','admin'];
+  const rl={staff:'スタッフ',chief:'チーフ',admin:'管理者'};
+  let html=`<thead><tr><th>権限</th>${FEATURES.map(f=>`<th>${f.label}</th>`).join('')}</tr></thead><tbody>`;
+  roles.forEach(role=>{
+    html+=`<tr><td><span class="badge ${PBADGE[role]}">${rl[role]}</span></td>`;
+    FEATURES.forEach(f=>{
+      const checked=(cfg[role]||[]).includes(f.id);
+      const locked=role==='admin'&&f.id==='admin';
+      html+=`<td><input type="checkbox" ${checked?'checked':''} ${locked?'disabled title="変更不可"':''} data-role="${role}" data-feat="${f.id}" onchange="onPermChange(this)"></td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody>';
+  document.getElementById('perm-table').innerHTML=html;
+}
+function onPermChange(el){const role=el.getAttribute('data-role');const feat=el.getAttribute('data-feat');if(!S.permConfig)S.permConfig=JSON.parse(JSON.stringify(DEFAULT_PERM));if(!S.permConfig[role])S.permConfig[role]=[];if(el.checked){if(!S.permConfig[role].includes(feat))S.permConfig[role].push(feat);}else S.permConfig[role]=S.permConfig[role].filter(f=>f!==feat);}
+function savePermConfig(){if(!S.permConfig)S.permConfig=JSON.parse(JSON.stringify(DEFAULT_PERM));if(!S.permConfig.admin)S.permConfig.admin=[];if(!S.permConfig.admin.includes('admin'))S.permConfig.admin.push('admin');addLog('ADMIN','権限設定を変更',op?.name);save();toast('権限設定を保存しました');}
+/* 担当者 */
+function renderAdmMembers(){document.getElementById('adm-mem-list').innerHTML=S.members.length?S.members.map((m,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:var(--bd2)">
+  <div style="width:30px;height:30px;border-radius:50%;background:rgba(224,124,16,.15);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--or);font-family:'Rajdhani',sans-serif">${m.name.slice(0,1)}</div>
+  <div style="flex:1"><div style="font-size:12px;font-weight:500">${m.name}</div><div style="font-size:10px;color:var(--tx3)">${m.role||'—'} · PIN: ${m.pin?'****':'未設定'}</div></div>
+  <span class="badge ${PBADGE[m.perm||'staff']}">${PL[m.perm||'staff']}</span>
+  <select style="width:auto;font-size:11px;padding:4px 7px;background:var(--bg3);border:var(--bd2);border-radius:var(--r);color:var(--tx)" onchange="S.members[${i}].perm=this.value;save();renderAdmMembers()">
+    <option value="staff" ${m.perm==='staff'?'selected':''}>スタッフ</option>
+    <option value="chief" ${m.perm==='chief'?'selected':''}>チーフ</option>
+    <option value="admin" ${m.perm==='admin'?'selected':''}>管理者</option>
+  </select>
+  <input type="password" maxlength="4" placeholder="PIN変更" style="width:74px;font-size:12px;background:var(--bg3);border:var(--bd2);border-radius:var(--r);color:var(--tx);padding:5px 8px" onchange="S.members[${i}].pin=this.value;save();toast('PIN更新しました')">
+  <button class="btn bs bd-btn" onclick="delMember(${i})">削除</button>
+</div>`).join(''):'<div class="empty">なし</div>';}
+function addMember(){const n=document.getElementById('mm-n').value.trim();if(!n){toast('名前が必要です',false);return;}const pin=document.getElementById('mm-pin').value;if(pin&&pin.length!==4){toast('PINは4桁で入力してください',false);return;}S.members.push({id:Date.now(),name:n,role:document.getElementById('mm-r').value.trim(),perm:document.getElementById('mm-p').value,pin:pin||''});addLog('ADMIN',`担当者「${n}」追加`,op?.name);save();['mm-n','mm-r','mm-pin'].forEach(id=>document.getElementById(id).value='');renderAdmMembers();toast(`「${n}」を追加しました`);}
+function delMember(i){if(op&&op.id===S.members[i].id){toast('現在ログイン中の担当者は削除できません',false);return;}const n=S.members[i].name;S.members.splice(i,1);addLog('ADMIN',`担当者「${n}」削除`,op?.name);save();renderAdmMembers();}
+/* ログ */
+function renderLogs(){const f=document.getElementById('log-f').value;const ls=f?S.logs.filter(l=>l.type===f):S.logs;document.getElementById('log-list').innerHTML=ls.length?ls.map(l=>`<div class="log-row"><span class="log-t">${l.t}</span><span class="lt lt-${l.type}">${l.type}</span><span class="log-txt">${l.text}</span><span class="log-by">${l.by}</span></div>`).join(''):'<div class="empty">ログがありません</div>';}
+function clearLogs(){if(!confirm('ログをすべて消去しますか？'))return;S.logs=[];save();renderLogs();toast('消去しました');}
+
+// ═══════════════════════════════
+//  GOOGLE SHEETS TAB
+// ═══════════════════════════════
+const GS_SCRIPT_CODE = `// ===== Google Apps Script (コピーして使用) =====
+// 設定: デプロイ → 新しいデプロイ → ウェブアプリ
+//       実行ユーザー: 自分 / アクセス: 全員
+
+function doGet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName('db') || ss.insertSheet('db');
+  const val = sh.getRange('A1').getValue();
+  return ContentService
+    .createTextOutput(val || '{}')
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName('db') || ss.insertSheet('db');
+  const body = e.postData.contents;
+  sh.getRange('A1').setValue(body);
+  
+  // 読みやすいシートにも書き出し
+  try {
+    const data = JSON.parse(body);
+    writeReadable(ss, '商品', data.products || [],
+      ['id','name','category','qty','price','threshold']);
+    writeReadable(ss, '素材', data.materials || [],
+      ['id','name','category','qty','unit','threshold']);
+    writeReadable(ss, 'ログ', data.logs || [],
+      ['t','type','text','by']);
+  } catch(err) {}
+  
+  return ContentService
+    .createTextOutput(JSON.stringify({ok: true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function writeReadable(ss, name, arr, cols) {
+  let sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  sh.clearContents();
+  if (!arr.length) return;
+  sh.getRange(1,1,1,cols.length).setValues([cols]);
+  const rows = arr.map(d =>
+    cols.map(c => d[c] !== undefined
+      ? (typeof d[c] === 'object' ? JSON.stringify(d[c]) : d[c])
+      : '')
+  );
+  sh.getRange(2,1,rows.length,cols.length).setValues(rows);
+}`;
+
+function renderGsTab(){
+  document.getElementById('gs-url').value=gsUrl||'';
+  document.getElementById('gs-code-block').textContent=GS_SCRIPT_CODE;
+  const hasSt=!!gsUrl;
+  document.getElementById('gs-push-btn').style.display=hasSt?'inline-block':'none';
+  document.getElementById('gs-pull-btn').style.display=hasSt?'inline-block':'none';
+}
+function saveGsUrl(){
+  const url=document.getElementById('gs-url').value.trim();
+  gsUrl=url;gsUrlSave(url);
+  renderGsTab();
+  if(url){setSyncStatus('','SHEETS');toast('Google Sheets URLを保存しました');}
+  else{setSyncStatus('','LOCAL');toast('GS連携を無効にしました');}
+}
+async function testGsConnection(){
+  const url=document.getElementById('gs-url').value.trim();
+  if(!url){toast('URLを入力してください',false);return;}
+  document.getElementById('gs-test-result').textContent='接続テスト中...';
+  try{
+    const r=await fetch(url+'?action=load');
+    if(r.ok){document.getElementById('gs-test-result').innerHTML='<span style="color:var(--ok)">✓ 接続成功</span>';toast('接続成功！');}
+    else{document.getElementById('gs-test-result').innerHTML='<span style="color:var(--ng)">✗ 接続失敗 (status '+r.status+')</span>';}
+  }catch(e){document.getElementById('gs-test-result').innerHTML='<span style="color:var(--ng)">✗ 接続失敗: '+e.message+'</span>';}
+}
+async function gsPushNow(){if(!gsUrl){toast('URLが設定されていません',false);return;}await gsPush();toast('Google Sheetsに保存しました');}
+async function gsPullNow(){if(!gsUrl){toast('URLが設定されていません',false);return;}const ok=await gsPull();if(ok){renderSidebar();toast('Google Sheetsから読み込みました');}}
+function copyGsCode(){try{navigator.clipboard.writeText(GS_SCRIPT_CODE);toast('コードをコピーしました');}catch(e){toast('コピーに失敗しました',false);}}
+
+/* その他 */
+function resetAll(){if(!confirm('全データをリセットしますか？\nこの操作は取り消せません。'))return;S={products:[],materials:[],members:[],logs:[],orgs:[],reservations:[],permConfig:JSON.parse(JSON.stringify(DEFAULT_PERM)),settings:{}};save();doLogout();toast('リセットしました');}
+
+// ═══════════════════════════════
+//  START
+// ═══════════════════════════════
+init();
+</script>
+</body>
+</html>
